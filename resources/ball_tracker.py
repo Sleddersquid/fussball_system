@@ -17,6 +17,7 @@ import time
 greenLower = (18, 100, 204) # (29, 86, 6)
 greenUpper = (26, 100, 204) # (64, 255, 255)
 pts = deque(maxlen=32)
+
 # grab the reference to the webcam
 vs = VideoStream(src=0).start()
 # allow the camera or video file to warm up
@@ -38,8 +39,6 @@ while True:
 	mask = cv2.inRange(hsv, greenLower, greenUpper)
 	mask = cv2.erode(mask, None, iterations=2)
 	mask = cv2.dilate(mask, None, iterations=2)
- 
-	# greenUpper, i, j, h = updateGreenValue(i, j, h)
  
  
  	# find contours in the mask and initialize the current
