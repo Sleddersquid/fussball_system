@@ -2,7 +2,7 @@ from library import modules
 import RPi.GPIO as gpio
 
 # Setting the GPIO pins to BCM mode.
-gpio.setmode(gpio.BCM) # This is also done in modules.py. Under revision, try to remove this line from modules.py
+# gpio.setmode(gpio.BCM) # This is also done in modules.py. Under revision, try to remove this line from modules.py
 
 # Setting up the pins for the stepper motor
 
