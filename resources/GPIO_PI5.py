@@ -16,7 +16,7 @@ try:
         print('Direction CW')
         sleep(.5)
         gpio.output(direction_pin,cw_direction)
-        for _ in range(200):
+        for i in range(200):
             gpio.output(pulse_pin,gpio.HIGH)
             sleep(.001)
             gpio.output(pulse_pin,gpio.LOW)
@@ -25,7 +25,7 @@ try:
         print('Direction CCW')
         sleep(.5)
         gpio.output(direction_pin,ccw_direction)
-        for _ in range(200):
+        for i in range(200):
             gpio.output(pulse_pin,gpio.HIGH)
             sleep(.001)
             gpio.output(pulse_pin,gpio.LOW)
