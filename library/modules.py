@@ -12,8 +12,8 @@ class Stepper_Motor():
         self.dir_pin = dir_pin
         self.steps_per_rev = 1600
         
-        gpio.setup(self.pulse_pin, gpio.OUT)
-        gpio.setup(self.dir_pin, gpio.OUT)
+        gpio.setup(pulse_pin, gpio.OUT)
+        gpio.setup(dir_pin, gpio.OUT)
         
         print(f"Direction pin {self.dir_pin}, pulse pin {self.pulse_pin}")
 
@@ -38,3 +38,12 @@ class Stepper_Motor():
     def __del__(self) -> None:
         self.clean_up()
 
+    def move_to_angle(self, angle: float, dir: int) -> None:
+        # Calculate the number of steps needed to move to the desired angle
+        steps = int((angle / 360.0) * self.steps_per_rev)
+        gpio.output(self.dir_pin, dir)
+        for _ in range(steps):
+            gpio.output(self.pulse_pin, gpio.HIGH)
+            sleep(.00018)
+            gpio.output(self.pulse_pin, gpio.LOW)
+            sleep(.00018)

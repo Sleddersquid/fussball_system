@@ -12,7 +12,7 @@ gpio.setup(pulse_pin, gpio.OUT)
 gpio.output(direction_pin,cw_direction)
 
 try:
-    while True:
+    while __name__ == '__main__':
         print('Direction CW')
         sleep(.5)
         gpio.output(direction_pin,cw_direction)
