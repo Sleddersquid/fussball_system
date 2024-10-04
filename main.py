@@ -7,7 +7,7 @@ gpio.setmode(gpio.BCM) # This is also done in modules.py. Under revision, try to
 # Setting up the pins for the stepper motor
 
 motor1 = modules.Stepper_Motor(20, 21)
-motor2 = modules.Stepper_Motor(22, 23)
+motor2 = modules.Stepper_Motor(24, 23)
 
 
 
