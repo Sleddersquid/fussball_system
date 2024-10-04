@@ -28,15 +28,15 @@ class Stepper_Motor():
             gpio.output(self.pulse_pin,gpio.LOW) # Setter pulse to LOW
             sleep(.00018) # Wait 18 mys or 0.00018s
             
-    def clean_up(self) -> None:
-        print("Cleaning up GPIO")
-        gpio.cleanup()
+    # def clean_up(self) -> None:
+    #     print("Cleaning up GPIO")
+    #     gpio.cleanup()
         
-    def __str__(self) -> str:
-        return f"Direction pin {self.dir_pin}, pulse pin {self.pulse_pin}"
+    # def __str__(self) -> str:
+    #     return f"Direction pin {self.dir_pin}, pulse pin {self.pulse_pin}"
     
-    def __del__(self) -> None:
-        self.clean_up()
+    # def __del__(self) -> None:
+    #     self.clean_up()
 
     def move_to_angle(self, angle: float, dir: int) -> None:
         # Calculate the number of steps needed to move to the desired angle

@@ -11,12 +11,12 @@ motor2 = modules.Stepper_Motor(24, 23)
 
 
 
-try:
-    while True:
-        print("Clockwise")
-        motor1.opperate(1, 0)
-        print("Counter Clockwise")
-        motor1.opperate(1, 1)
+# try:
+while True:
+    print("Clockwise")
+    motor1.opperate(1, 0)
+    print("Counter Clockwise")
+    motor1.opperate(1, 1)
 
-except KeyboardInterrupt:
-    gpio.cleanup()
+# except KeyboardInterrupt:
+#     gpio.cleanup()
