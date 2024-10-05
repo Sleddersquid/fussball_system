@@ -1,9 +1,10 @@
 # For imports for classes. So this is a libray file 
-import RPi.GPIO as gpio
+# import RPi.GPIO as gpio # Denne virker ikke med Rasspery pi 5
+import lgpio as lgpio
 from time import sleep
 
-# Setting up the GPIO pins to BCM mode
-gpio.setmode(gpio.BCM)
+# Opening gpiochip 0. See gpioinfo in terminal
+chip = lgpio.gpiochip_open(0)  # Open GPIO chip 0
 
 # There may not be a need to differentiate between big and small stepper motor
 class Stepper_Motor():
@@ -12,8 +13,8 @@ class Stepper_Motor():
         self.dir_pin = dir_pin
         self.steps_per_rev = 1600
         
-        gpio.setup(pulse_pin, gpio.OUT)
-        gpio.setup(dir_pin, gpio.OUT)
+        lgpio.gpio_claim_output(chip, pulse_pin)  # For the pulse pin
+        lgpio.gpio_claim_output(chip, dir_pin)  # For the direction pin
         
         print(f"Direction pin {self.dir_pin}, pulse pin {self.pulse_pin}")
 
@@ -21,19 +22,20 @@ class Stepper_Motor():
     # clockwise is 0, counter clockwise is 1. Could be changed to a boolean.
     def opperate(self, revs: int, dir: int) -> None:
         # Setting the direction for the motor to stepin
-        gpio.output(self.dir_pin, dir)
+        lgpio.gpio_write(chip, dir, 1)
         for _ in range(revs*self.steps_per_rev): # To acheive PMW
-            gpio.output(self.pulse_pin,gpio.HIGH) # Setter pulse to HIGH 
+            lgpio.gpio_write(chip, self.pulse_pin, 1) # Setter pulse to HIGH 
             sleep(.00018) # Wait 18 mys or 0.00018s
-            gpio.output(self.pulse_pin,gpio.LOW) # Setter pulse to LOW
+            lgpio.gpio_write(chip, self.pulse_pin, 0)
+            # Setter pulse to LOW
             sleep(.00018) # Wait 18 mys or 0.00018s
             
     # def clean_up(self) -> None:
     #     print("Cleaning up GPIO")
-    #     gpio.cleanup()
+    #     lgpio.gpiochip_close(chip)
         
-    # def __str__(self) -> str:
-    #     return f"Direction pin {self.dir_pin}, pulse pin {self.pulse_pin}"
+    def __str__(self) -> str:
+        return f"Direction pin {self.dir_pin}, pulse pin {self.pulse_pin}"
     
     # def __del__(self) -> None:
     #     self.clean_up()
@@ -41,9 +43,9 @@ class Stepper_Motor():
     def move_to_angle(self, angle: float, dir: int) -> None:
         # Calculate the number of steps needed to move to the desired angle
         steps = int((angle / 360.0) * self.steps_per_rev)
-        gpio.output(self.dir_pin, dir)
+        lgpio.gpio_write(chip, dir, 1)
         for _ in range(steps):
-            gpio.output(self.pulse_pin, gpio.HIGH)
+            lgpio.gpio_write(chip, self.pulse_pin, 1)
             sleep(.00018)
-            gpio.output(self.pulse_pin, gpio.LOW)
+            lgpio.gpio_write(chip, self.pulse_pin, 0)
             sleep(.00018)
