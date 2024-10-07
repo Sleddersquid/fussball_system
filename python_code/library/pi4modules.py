@@ -24,9 +24,9 @@ class Stepper_Motor():
         gpio.output(self.dir_pin, dir)
         for _ in range(revs*self.steps_per_rev): # To acheive PMW
             gpio.output(self.pulse_pin,gpio.HIGH) # Setter pulse to HIGH 
-            sleep(.00018) # Wait 18 mys or 0.00018s
+            sleep(.000020) # Wait 18 mys or 0.00018s
             gpio.output(self.pulse_pin,gpio.LOW) # Setter pulse to LOW
-            sleep(.00018) # Wait 18 mys or 0.00018s
+            sleep(.000020) # Wait 18 mys or 0.00018s
             
     # def clean_up(self) -> None:
     #     print("Cleaning up GPIO")
