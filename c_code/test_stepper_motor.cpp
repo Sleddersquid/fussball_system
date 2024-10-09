@@ -4,7 +4,7 @@
 
 #include <gpiod.hpp>
 // Absolute path. Should be reviced under revision
-#include "/home/sleddersquid/fussball_system/c_code/library/main.h"
+// #include "/home/sleddersquid/fussball_system/c_code/library/main.h"
 
 ::gpiod::chip chip("gpiochip0");
 
