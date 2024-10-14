@@ -12,7 +12,7 @@ class Big_Stepper_Motor():
         self.pulse_pin = pulse_pin
         self.dir_pin = dir_pin
         self.steps_per_rev = 1600
-        self.wait_time = 0.00010
+        self.wait_time = 0.0010
         self.steps_taken = 0
         
         self.name = name
@@ -30,6 +30,17 @@ class Big_Stepper_Motor():
         self.steps_taken = self.steps_taken + revs*self.steps_per_rev*((-1)**dir)
         lgpio.gpio_write(chip, self.dir_pin, dir)
         for _ in range(revs*self.steps_per_rev): # To acheive PMW
+            lgpio.gpio_write(chip, self.pulse_pin, 1) # Setter pulse to HIGH 
+            sleep(self.wait_time) # Wait 18 mys or 0.00018s
+            lgpio.gpio_write(chip, self.pulse_pin, 0)
+            # Setter pulse to LOW
+            sleep(self.wait_time) # Wait 18 mys or 0.00018s
+            
+    def steps_opperate(self, steps, dir: int) -> None:
+        # Setting the direction for the motor to stepin
+        self.steps_taken = self.steps_taken + steps*((-1)**dir)
+        lgpio.gpio_write(chip, self.dir_pin, dir)
+        for _ in range(steps): # To acheive PMW
             lgpio.gpio_write(chip, self.pulse_pin, 1) # Setter pulse to HIGH 
             sleep(self.wait_time) # Wait 18 mys or 0.00018s
             lgpio.gpio_write(chip, self.pulse_pin, 0)
@@ -70,7 +81,7 @@ class Small_Stepper_Motor():
         self.pulse_pin = pulse_pin
         self.dir_pin = dir_pin
         self.steps_per_rev = 1600
-        self.wait_time = 0
+        self.wait_time = 0.0000010
         self.steps_taken = 0
         
         self.name = name
@@ -92,7 +103,18 @@ class Small_Stepper_Motor():
             sleep(self.wait_time) # Wait 18 mys or 
             lgpio.gpio_write(chip, self.pulse_pin, 0)
             # Setter pulse to LOW
-            sleep(self.wait_time) # Wait 18 mys or 
+            sleep(self.wait_time) # Wait 18 mys or
+            
+    def steps_opperate(self, steps, dir: int) -> None:
+        # Setting the direction for the motor to stepin
+        self.steps_taken = self.steps_taken + steps*((-1)**dir)
+        lgpio.gpio_write(chip, self.dir_pin, dir)
+        for _ in range(steps): # To acheive PMW
+            lgpio.gpio_write(chip, self.pulse_pin, 1) # Setter pulse to HIGH 
+            sleep(self.wait_time) # Wait 18 mys or 0.00018s
+            lgpio.gpio_write(chip, self.pulse_pin, 0)
+            # Setter pulse to LOW
+            sleep(self.wait_time) # Wait 18 mys or 0.00018s
             
     # def clean_up(self) -> None:
     #     print("Cleaning up GPIO")
