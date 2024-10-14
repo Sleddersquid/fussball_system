@@ -5,7 +5,7 @@
 int main() {
 
     // Attempt to open gpiochip0
-    gpiod::chip chip("gpiochip4");
+    gpiod::chip chip("gpiochip0");
 
     gpiod::line line1 = chip.get_line(20);  // GPIO20 pulse pin
     gpiod::line line2 = chip.get_line(21);  // GPIO21 dir pin
