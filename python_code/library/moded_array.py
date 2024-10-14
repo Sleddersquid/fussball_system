@@ -14,7 +14,6 @@ class Moded_Array():
             
     def __len__(self) -> int: # the len() function calls this method  
         return len(self.array)
-        
 
 
 

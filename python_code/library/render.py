@@ -52,8 +52,8 @@ class Render():
             self.circlepos.x -= 100 * self.dt
              
         # print(self.circlepos)
-        
-                  
+
+
 if __name__ == "__main__":
     app = Render(1200, 500)
     # app.addpoints(100, 100)
