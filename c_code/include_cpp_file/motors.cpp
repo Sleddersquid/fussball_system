@@ -1,6 +1,7 @@
 #include <iostream>
 #include <string>
 #include <unistd.h>
+#include <math.h>
 
 #include <gpiod.hpp>
 
@@ -16,7 +17,7 @@
  * @brief 
  * @param pulse_pin - The pin that the pulse signal is connected to
  * @param dir_pin - The pin that the direction signal is connected to
- * @param chip - The GPIO chip that the pins are connected to
+ * @param chip - The GPIO chip for opening the lines 
  * @param row - The row of the motor
  */
 Big_Stepper_motor::Big_Stepper_motor(int pulse_pin, int dir_pin, gpiod::chip chip, int row)
@@ -36,8 +37,6 @@ Big_Stepper_motor::~Big_Stepper_motor() {
         dir_line.release();
 };
 
-// Trying with boolean. But try the python module first
-// This function makes the motor go in a certain direction in certain direction
 void Big_Stepper_motor::opperate(int revs, bool dir) {
     // Check if it will go over under the limit. If it does, throw an exception
     if (steps_taken + revs*(steps_per_rev) > max_steps || steps_taken - revs*(steps_per_rev) < 0) {
@@ -77,6 +76,24 @@ void Big_Stepper_motor::steps_opperate(int steps, bool dir) {
     }
 };
 
+
+void Big_Stepper_motor::go_to_angle(int new_angle, bool dir) {
+    // Check if it will go over under the limit, if it does, throw an exception
+    int angle = abs(new_angle - this->last_angle);
+
+    if (steps_taken + angle*(steps_per_rev)/360 > max_steps || steps_taken - angle*(steps_per_rev)/360 < 0) {
+        throw MAX_LIMIT_FOR_STEPS_REACHED();
+    }
+
+
+    // STeps needed to go to the angle
+    int steps = int(angle*(steps_per_rev)/360);
+    
+    this->steps_opperate(steps, dir);
+
+    last_angle = new_angle;
+}
+
 int Big_Stepper_motor::get_row() {
     return this->m_row;
 };
@@ -86,9 +103,6 @@ int Big_Stepper_motor::get_row() {
 
 
 // The small motor has no limit of how many steps it can take
-
-
-
 // ------------------------------ SMALL MOTOR ------------------------------ //
 Small_Stepper_motor::Small_Stepper_motor(int pulse_pin, int dir_pin, gpiod::chip chip, int row) 
     : m_pulse_pin(pulse_pin), m_dir_pin(dir_pin) , m_row(row) {
@@ -114,12 +128,37 @@ void Small_Stepper_motor::opperate(int revs, bool dir) {
     // Pulse the motor
     for (int i = 0; i < revs*(this->steps_per_rev); i++) {
         this->pulse_line.set_value(1);
-        usleep(1); // 100 us
+        usleep(sleep_time); // 100 us
         this->pulse_line.set_value(0);
-        usleep(1); // 100 us
+        usleep(sleep_time); // 100 us
     }
 };
+
+void Small_Stepper_motor::steps_opperate(int steps, bool dir) {
+    // Set the direction
+    this->dir_line.set_value(dir);
+    // Pulse the motor
+    for (int i = 0; i < steps; i++) {
+        this->pulse_line.set_value(1);
+        usleep(sleep_time); // 100 us
+        this->pulse_line.set_value(0);
+        usleep(sleep_time); // 100 us
+    }
+};
+
+void Small_Stepper_motor::go_to_angle(int new_angle, bool dir) {
+    
+    int angle = abs(new_angle - this->last_angle);
+
+    // STeps needed to go to the angle
+    int steps = int(angle*(steps_per_rev)/360);
+    
+    this->steps_opperate(steps, dir);
+
+    last_angle = new_angle;
+}
 
 int Small_Stepper_motor::get_row() {
     return this->m_row;
 };
+

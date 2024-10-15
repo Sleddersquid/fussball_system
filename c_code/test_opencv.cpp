@@ -2,10 +2,14 @@
 #include <iostream>
 #include <deque>
 
+// CHAT GPT KODE. 
+
 // Function to calculate the center of a contour using moments
 cv::Point calculateCenter(const std::vector<cv::Point>& contour) {
     cv::Moments M = cv::moments(contour);
     if (M.m00 != 0) {
+        // See https://docs.opencv.org/3.4/d8/d23/classcv_1_1Moments.html for center (x¯, y¯)
+        // 
         return cv::Point(static_cast<int>(M.m10 / M.m00), static_cast<int>(M.m01 / M.m00));
     } else {
         return cv::Point(0, 0); // Return a dummy value if contour area is zero
@@ -78,7 +82,7 @@ int main() {
 
             // Only proceed if the radius meets a minimum size
             if (radius > 10) {
-                // Draw the circle and the centroid on the frame
+                // Draw the circle and the centroid on the frame TODO: REMOVE THIS
                 cv::circle(frame, enclosingCenter, static_cast<int>(radius), cv::Scalar(0, 255, 255), 2);
                 cv::circle(frame, center, 5, cv::Scalar(0, 0, 255), -1);
             }
