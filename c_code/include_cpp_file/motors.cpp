@@ -40,7 +40,7 @@ Big_Stepper_motor::~Big_Stepper_motor() {
 void Big_Stepper_motor::opperate(int revs, bool dir) {
     // Check if it will go over under the limit. If it does, throw an exception
     if (steps_taken + revs*(steps_per_rev) > max_steps || steps_taken - revs*(steps_per_rev) < 0) {
-        throw MAX_LIMIT_FOR_STEPS_REACHED();
+        throw MAX_LIMIT_FOR_STEPS_REACHED;
     }
 
     steps_taken = steps_taken + revs*(steps_per_rev) * (dir ? -1 : 1);
@@ -59,7 +59,7 @@ void Big_Stepper_motor::opperate(int revs, bool dir) {
 void Big_Stepper_motor::steps_opperate(int steps, bool dir) {
     // Check if it will go over under the limit, if it does, throw an exception
     if (steps_taken + steps > max_steps || steps_taken - steps < 0) {
-        throw MAX_LIMIT_FOR_STEPS_REACHED();
+        throw MAX_LIMIT_FOR_STEPS_REACHED;
     }
 
     // Since forwards is 0 and backwards 1, we need to add or subtract the steps, depending on the direction
@@ -76,29 +76,34 @@ void Big_Stepper_motor::steps_opperate(int steps, bool dir) {
     }
 };
 
+void Big_Stepper_motor::go_to_angle(int new_angle) {
+    // d_new - d_old = angle to move to
+    // The direction the motor should go. False (0) is forward, True (1) is backwards
+    // Have to cumpute this first
+    int angle = new_angle - this->m_last_angle;
+    int steps = int(abs(angle)*(steps_per_rev)/360);
 
-void Big_Stepper_motor::go_to_angle(int new_angle, bool dir) {
-    // Check if it will go over under the limit, if it does, throw an exception
-    int angle = abs(new_angle - this->last_angle);
-
-    if (steps_taken + angle*(steps_per_rev)/360 > max_steps || steps_taken - angle*(steps_per_rev)/360 < 0) {
-        throw MAX_LIMIT_FOR_STEPS_REACHED();
+    if (steps_taken + steps > max_steps || steps_taken - steps < 0) {
+        throw MAX_LIMIT_FOR_STEPS_REACHED;
     }
 
+    int dir = 0;
+    // 0 is forwards, 1 is backwards
+    if (angle > 0) { // if positive, go backwards (counter_clockwise)
+        dir = 1;
+    } // Else dir stays zero and forwards (clockwise)
 
-    // STeps needed to go to the angle
-    int steps = int(angle*(steps_per_rev)/360);
+    // Steps needed to go to the angle
+    // Since angle can be negative, steps cannot. Therefor abs(angle)
     
     this->steps_opperate(steps, dir);
 
-    last_angle = new_angle;
+    this->last_angle = new_angle;
 }
 
 int Big_Stepper_motor::get_row() {
     return this->m_row;
 };
-
-
 
 
 
@@ -146,16 +151,26 @@ void Small_Stepper_motor::steps_opperate(int steps, bool dir) {
     }
 };
 
-void Small_Stepper_motor::go_to_angle(int new_angle, bool dir) {
+void Small_Stepper_motor::go_to_angle(int new_angle) {
     
-    int angle = abs(new_angle - this->last_angle);
+    // d_new - d_old = angle to move to
+    // The direction the motor should go. False (0) is forward, True (1) is backwards
+    // Have to cumpute this first
+    int angle = new_angle - this->m_last_angle;
+    int steps = int(abs(angle)*(steps_per_rev)/360);
 
-    // STeps needed to go to the angle
-    int steps = int(angle*(steps_per_rev)/360);
+    int dir = 0;
+    // 0 is forwards, 1 is backwards
+    if (angle > 0) { // if positive, go backwards (counter_clockwise)
+        dir = 1;
+    } // Else dir stays zero and forwards (clockwise)
+
+    // Steps needed to go to the angle
+    // Since angle can be negative, steps cannot. Therefor abs(angle)
     
     this->steps_opperate(steps, dir);
 
-    last_angle = new_angle;
+    this->last_angle = new_angle;
 }
 
 int Small_Stepper_motor::get_row() {

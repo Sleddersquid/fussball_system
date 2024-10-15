@@ -2,13 +2,10 @@
 
 # import the necessary packages
 from collections import deque
-from imutils.video import VideoStream
 import numpy as np
 import cv2
 import imutils
 import time
-
-
 # construct the argument parse and parse the arguments
 
 # define the lower and upper boundaries of the "green"
@@ -19,7 +16,7 @@ greenUpper = (26, 100, 204) # (64, 255, 255)
 pts = deque(maxlen=32)
 
 # grab the reference to the webcam
-vs = VideoStream(src=0).start()
+vs = cv2.VidepCapture(0)
 # allow the camera or video file to warm up
 time.sleep(2.0)
 
@@ -29,8 +26,9 @@ while True:
 	frame = vs.read()
 	# handle the frame from VideoCapture
 
+
 	# resize the frame, blur it, and convert it to the HSV color space
-	frame = imutils.resize(frame, width=600, height=600)
+	frame = cv2.resize(frame, width=600, height=600)
 	blurred = cv2.GaussianBlur(frame, (11, 11), 0)
 	hsv = cv2.cvtColor(blurred, cv2.COLOR_BGR2HSV)
 	# construct a mask for the color "green", then perform
@@ -39,7 +37,6 @@ while True:
 	mask = cv2.inRange(hsv, greenLower, greenUpper)
 	mask = cv2.erode(mask, None, iterations=2)
 	mask = cv2.dilate(mask, None, iterations=2)
- 
  
  	# find contours in the mask and initialize the current
 	# (x, y) center of the ball

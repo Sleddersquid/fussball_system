@@ -43,7 +43,7 @@ private:
     // max number of steps is between [0, 2000] 
     int max_steps = 2000;
     
-    int last_angle = 0;
+    int m_last_angle = 0;
 
 public:
     Big_Stepper_motor(int pulse_pin, int dir_pin, gpiod::chip chip, int row);
@@ -71,10 +71,9 @@ public:
 
     /**
      * @brief Makes the motor go to a certain angle, given theta (in degrees). Is limited to 2000 steps
-     * @param angle - The angle the motor should go to
-     * @param dir - The direction the motor should go. False (0) is forward, True (1) is backwards
+     * @param angle - The angle the motor should go to.
      */
-    void go_to_angle(int theta, bool dir);
+    void go_to_angle(int theta);
 
 
     /**
@@ -108,7 +107,7 @@ private:
     float sleep_time = 0.000001; // 1 us
     int steps_taken = 0;
 
-    int last_angle = 0;
+    int m_last_angle = 0;
 
 public:
     Small_Stepper_motor(int pulse_pin, int dir_pin, gpiod::chip chip, int row);
@@ -120,7 +119,7 @@ public:
     // Don't think this one is needed. Maybe just do full revoloutions
     void steps_opperate(int steps, bool dir);
 
-    void go_to_angle(int angle, bool dir);
+    void go_to_angle(int angle);
 
     int get_row();
 };

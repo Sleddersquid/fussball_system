@@ -84,8 +84,7 @@ cv::Point calculateCenter(const std::vector<cv::Point> &contour)
 
 void opencv(max_deque<cv::Point_<int>, 32> &ball_position) {
 
-    while (true)
-    {
+    while (true) {
         /* code */
     }
 }
@@ -93,26 +92,15 @@ void opencv(max_deque<cv::Point_<int>, 32> &ball_position) {
 void fussball_system(max_deque<cv::Point_<int>, 32> &ball_position) {
     int theta;
 
-    while (true)
-    {
+    while (true) {
         // This needs a lock
         cv::Point_<int> ball_pos = ball_position.back();
 
         // Calculate the angle of position of the ball
         // Since atan gives radians, convert it to degrees
-        theta = atan2(ball_pos.y - 300, ball_pos.x - 300) * 180 / PI;
+        theta = atan2(ball_pos.y - 300, ball_pos.x - 300) * (180 / PI);
 
-        // If theta less than zero, move forwards, else move backwards
-        if (theta < 0 ) {
-            big_motor_row0.go_to_angle(theta, false);
-        } else {
-            big_motor_row0.go_to_angle(theta, true);
-        }
-
-
-
-
-
+        small_motor_row0.go_to_angle(theta);
     }
 }
 
