@@ -2,13 +2,17 @@
 #include <string>
 
 
+/**
+ * @brief A deque that has a max size. If the deque is full, the first element is removed
+ * @param max_size Sets the max size of the deque. 
+ */
 template <typename T>
 class max_deque {
 private:
     std::deque<T> deque;
     int max_size;
 public:
-    max_deque(int max_size) : max_size(max_size) : deque() {
+    max_deque(int max_size) : max_size(max_size) {
         std::cout << "created a deque with max length of" << std::to_string(max_size) << std::endl;
     }
 

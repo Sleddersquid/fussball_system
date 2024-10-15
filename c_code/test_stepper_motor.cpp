@@ -5,7 +5,7 @@
 
 #include <gpiod.hpp>
 // Absolute path. Should be reviced under revision
-#include "library/motors.hpp"
+#include "include_cpp_file/motors.cpp"
 
 gpiod::chip chip("gpiochip0");
 
@@ -18,8 +18,8 @@ int small_motor1_dir_pin = 21;
 
 // Open the GPIO chip
 // Connect to the GPIO line
-Big_Stepper_motor big_motor1(big_motor1_pulse_pin, big_motor1_dir_pin, chip, "Motor1", 0);
-Small_Stepper_motor small_motor1(small_motor1_pulse_pin, small_motor1_dir_pin, chip, "Motor1", 0);
+Big_Stepper_motor big_motor1(big_motor1_pulse_pin, big_motor1_dir_pin, chip, 0);
+Small_Stepper_motor small_motor1(small_motor1_pulse_pin, small_motor1_dir_pin, chip, 0);
 
 // Stepper_motor big_motor2(big_motor2_pin, big_motor2_pin, chip);
 // Stepper_motor small_motor2(small_motor2_pin, small_motor2_pin, chip);
@@ -29,7 +29,6 @@ Small_Stepper_motor small_motor1(small_motor1_pulse_pin, small_motor1_dir_pin, c
 
 int main()
 {
-    // If the chip is not opened, print an error message and exit program with error code 1
     usleep(100000); // 100 milisec
 
     try{
