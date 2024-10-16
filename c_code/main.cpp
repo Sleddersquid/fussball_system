@@ -82,20 +82,22 @@ cv::Point calculateCenter(const std::vector<cv::Point> &contour)
 
 // --------------- Func for the threads --------------- //
 
-void opencv(max_deque<cv::Point_<int>, 32> &ball_position) {
+void opencv(max_deque<cv::Point_<int>, 32> &ball_position, std::mutex &mtx) {
 
     while (true) {
         /* code */
     }
 }
 
-void fussball_system(max_deque<cv::Point_<int>, 32> &ball_position) {
+void fussball_system(max_deque<cv::Point_<int>, 32> &ball_position, std::mutex &mtx) {
     int theta;
+    cv::Point_<int> ball_pos;
 
     while (true) {
         // This needs a lock
-        cv::Point_<int> ball_pos = ball_position.back();
-
+        mtx.lock();
+        ball_pos = ball_position.back();
+        mtx.unlock();
         // Calculate the angle of position of the ball
         // Since atan gives radians, convert it to degrees
         theta = atan2(ball_pos.y - 300, ball_pos.x - 300) * (180 / PI);
@@ -117,8 +119,8 @@ int main() {
 
     
     try {
-        thread1 = std::thread{opencv, std::ref(ball_position)};
-        thread2 = std::thread{fussball_system, std::ref(ball_position)};
+        thread1 = std::thread{opencv, std::ref(ball_position), std::ref(mtx)};
+        thread2 = std::thread{fussball_system, std::ref(ball_position), std::ref(mtx)};
     }
     catch (const std::exception &e)
     {
