@@ -39,9 +39,9 @@ Big_Stepper_motor::~Big_Stepper_motor() {
 
 void Big_Stepper_motor::opperate(int revs, bool dir) {
     // Check if it will go over under the limit. If it does, throw an exception
-    if (steps_taken + revs*(steps_per_rev) > max_steps || steps_taken - revs*(steps_per_rev) < 0) {
-        throw MAX_LIMIT_FOR_STEPS_REACHED;
-    }
+    // if (steps_taken + revs*(steps_per_rev) > max_steps || steps_taken - revs*(steps_per_rev) < 0) {
+    //     throw MAX_LIMIT_FOR_STEPS_REACHED();
+    // }
 
     steps_taken = steps_taken + revs*(steps_per_rev) * (dir ? -1 : 1);
     // Set the direction
@@ -58,9 +58,9 @@ void Big_Stepper_motor::opperate(int revs, bool dir) {
 
 void Big_Stepper_motor::steps_opperate(int steps, bool dir) {
     // Check if it will go over under the limit, if it does, throw an exception
-    if (steps_taken + steps > max_steps || steps_taken - steps < 0) {
-        throw MAX_LIMIT_FOR_STEPS_REACHED;
-    }
+    // if (steps_taken + steps > max_steps || steps_taken - steps < 0) {
+    //     throw MAX_LIMIT_FOR_STEPS_REACHED();
+    // }
 
     // Since forwards is 0 and backwards 1, we need to add or subtract the steps, depending on the direction
     // Should instead use -1**dir, but since it uses a function, i found this more convinient
@@ -83,9 +83,9 @@ void Big_Stepper_motor::go_to_angle(int new_angle) {
     int angle = new_angle - this->m_last_angle;
     int steps = int(abs(angle)*(steps_per_rev)/360);
 
-    if (steps_taken + steps > max_steps || steps_taken - steps < 0) {
-        throw MAX_LIMIT_FOR_STEPS_REACHED;
-    }
+    // if (steps_taken + steps > max_steps || steps_taken - steps < 0) {
+    //     throw MAX_LIMIT_FOR_STEPS_REACHED();
+    // }
 
     int dir = 0;
     // 0 is forwards, 1 is backwards
@@ -98,7 +98,7 @@ void Big_Stepper_motor::go_to_angle(int new_angle) {
     
     this->steps_opperate(steps, dir);
 
-    this->last_angle = new_angle;
+    this->m_last_angle = new_angle;
 }
 
 int Big_Stepper_motor::get_row() {
@@ -126,7 +126,6 @@ Small_Stepper_motor::~Small_Stepper_motor() {
         dir_line.release();
 };
 
-// Trying with boolean. But try the python module first
 void Small_Stepper_motor::opperate(int revs, bool dir) {
     // Set the direction
     this->dir_line.set_value(dir);
@@ -170,7 +169,7 @@ void Small_Stepper_motor::go_to_angle(int new_angle) {
     
     this->steps_opperate(steps, dir);
 
-    this->last_angle = new_angle;
+    this->m_last_angle = new_angle;
 }
 
 int Small_Stepper_motor::get_row() {

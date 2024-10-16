@@ -12,11 +12,11 @@ import time
 
 
 def forwards(motor, steps):
-    motor.steps_opperate(steps, 0)
+    motor.steps_opperate(steps, 0) # Vekk fra bordet
     
     
 def backwards(motor, steps):
-    motor.steps_opperate(steps, 1)
+    motor.steps_opperate(steps, 1) # Nærmere mot bordet
 
 
 def back_and_forth(motor, n):
@@ -26,14 +26,35 @@ def back_and_forth(motor, n):
 
 
 def main():
-    stor_motor = pi5modules.Big_Stepper_Motor(23, 24, "Motor1", 0)
-    liten_motor = pi5modules.Small_Stepper_Motor(20, 21, "Motor2", 0)
+    stor_motor = pi5modules.Big_Stepper_Motor(20, 21, "Motor1", 0) # 23, 24
+    liten_motor = pi5modules.Small_Stepper_Motor(23, 24, "Motor2", 0) # 20, 21
 
 
     # DET ER IKKE SATT EN MAKS GRENSE FOR STEG PÅ MOTORNE
-    forwards(stor_motor, 400)
-    backwards(stor_motor, 400)
-    back_and_forth(stor_motor, 2)
+    # back_and_forth(stor_motor, 10)
+    # back_and_forth(liten_motor, 10)
+    
+    # for i in range(0, 1):
+        # backwards(stor_motor, 1000) # Stor motor fram først
+        # forwards(liten_motor, 1000)
+        # backwards(liten_motor, 1000) #liten motor 
+        # forwards(stor_motor, 1000)
+        # forwards(liten_motor, 1000)
+        # backwards(liten_motor, 1000) #liten motor 
+        # time.sleep(2)
+    
+    # forwards(stor_motor, 200)
+    backwards(stor_motor, 1000)
+    
+    
+    # forwards(stor_motor, 200)
+    
+    
+    
+    
+    # backwards(liten_motor, 200)
+    # back_and_forth(stor_motor, 2)
+    # backwards(liten_motor, 2000)
 
 
 if __name__ == "__main__":

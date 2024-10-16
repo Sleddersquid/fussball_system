@@ -10,11 +10,11 @@
 gpiod::chip chip("gpiochip0");
 
 // This needs to be better organized in the future.
-int big_motor1_pulse_pin = 23;
-int big_motor1_dir_pin = 24;    
+int big_motor1_pulse_pin = 20;
+int big_motor1_dir_pin = 21;    
 
-int small_motor1_pulse_pin = 20;
-int small_motor1_dir_pin = 21;
+int small_motor1_pulse_pin = 23;
+int small_motor1_dir_pin = 24;
 
 // Open the GPIO chip
 // Connect to the GPIO line
@@ -31,16 +31,24 @@ int main()
 {
     usleep(100000); // 100 milisec
 
-    try{
-        for (int i = 0; i < 2; i++)
-        {
-	            big_motor1.opperate(1, 0);
-                small_motor1.opperate(1, 0);
-                usleep(100000); // 100 ms
-                big_motor1.opperate(1, 1);
-                small_motor1.opperate(1, 1);
-                usleep(100000); // 100 ms
-        }
+    // 0 er vekk fra bordet
+    // 1 er mot bordet
+
+
+    try {
+        // for (int i = 0; i < 5; i++) {
+        //     big_motor1.opperate(1, i%2);
+        //     // small_motor1.go_to_angle(i*90);
+
+        //     usleep(100000); // 1 sec
+
+        // }
+
+        // big_motor1.steps_opperate(1200, 0);
+        small_motor1.steps_opperate(10000, 1);
+    
+
+
     }
     catch (const std::exception &e)
     {

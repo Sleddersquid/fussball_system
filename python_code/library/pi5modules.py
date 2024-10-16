@@ -12,7 +12,7 @@ class Big_Stepper_Motor():
         self.pulse_pin = pulse_pin
         self.dir_pin = dir_pin
         self.steps_per_rev = 1600
-        self.wait_time = 0.0010
+        self.wait_time = 0.000080 # 400 us
         self.steps_taken = 0
         
         self.name = name
@@ -81,7 +81,7 @@ class Small_Stepper_Motor():
         self.pulse_pin = pulse_pin
         self.dir_pin = dir_pin
         self.steps_per_rev = 1600
-        self.wait_time = 0.0000010
+        self.wait_time = 0.000010
         self.steps_taken = 0
         
         self.name = name

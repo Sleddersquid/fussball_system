@@ -1,7 +1,7 @@
 #include <iostream>
 #include <array>
 #include <vector>
-#include <math.h>
+#include <tgmath.h>
 
 
 // For the threads and such
@@ -21,6 +21,8 @@
 
 #define PI 3.14159265
 
+#define MAX_LEN_DEQUE 32
+
 // ------------------------ TODO: ------------------------ //
 // 1 - Make an algorithm that chooses what row and another alogrithm for the players
 
@@ -35,15 +37,12 @@ struct center_point {
     int y = 300;
 };
 
-
-
-
 // ------------------ INIT OF MOTORS ------------------ //
 // All the pins are numbered after the GPIO pins, and not the lines
 
 // First row
-Big_Stepper_motor big_motor_row0(23, 24, chip, 0);
-Small_Stepper_motor small_motor_row0(20, 21, chip, 0);
+Big_Stepper_motor big_motor_row0(20, 21, chip, 0);
+Small_Stepper_motor small_motor_row0(23, 24, chip, 0);
 
 // Second row
 Big_Stepper_motor big_motor_row1(2, 3, chip, 1);
@@ -81,34 +80,53 @@ cv::Point calculateCenter(const std::vector<cv::Point> &contour)
 }
 
 // --------------- Func for the threads --------------- //
-
-void opencv(max_deque<cv::Point_<int>, 32> &ball_position, std::mutex &mtx) {
+void opencv(max_deque<cv::Point_<int>, MAX_LEN_DEQUE> &ball_position, std::mutex &mtx) {
 
     while (true) {
         /* code */
     }
 }
 
-void fussball_system(max_deque<cv::Point_<int>, 32> &ball_position, std::mutex &mtx) {
+void fussball_system(max_deque<cv::Point_<int>, MAX_LEN_DEQUE> &ball_position, std::mutex &mtx) {
     int theta;
-    cv::Point_<int> ball_pos;
+    // cv::Point_<int> ball_pos;
 
     while (true) {
         // This needs a lock
         mtx.lock();
-        ball_pos = ball_position.back();
+        // ball_pos = ball_position.back();
         mtx.unlock();
         // Calculate the angle of position of the ball
         // Since atan gives radians, convert it to degrees
-        theta = atan2(ball_pos.y - 300, ball_pos.x - 300) * (180 / PI);
+        // theta = atan2(ball_pos.y - 300, ball_pos.x - 300) * (180 / PI);
 
-        small_motor_row0.go_to_angle(theta);
+        // small_motor_row0.go_to_angle(theta);
     }
 }
 
+ 
+
+
+// ------------------ MOTOR FUNCTIONS ------------------ //
+// Just som functions to operate the motors in a thread
+void big_motor_opperate(Big_Stepper_motor &motor) {
+    motor.steps_opperate(1600, 1);
+    std::cout << "End of thread 1" << std::endl;
+}
+
+
+void small_motor_opperate(Small_Stepper_motor &motor) {
+    motor.opperate(20, 0);
+    std::cout << "End of thread 2" << std::endl;
+}
+
+
+
+// ------------------ MAIN FUNCTION ------------------ //
+
 int main() {
 
-    max_deque<cv::Point_<int>, 32> ball_position;
+    max_deque<cv::Point_<int>, MAX_LEN_DEQUE> ball_position;
 
     // Initialization of mutex
     std::mutex mtx;
@@ -119,8 +137,13 @@ int main() {
 
     
     try {
-        thread1 = std::thread{opencv, std::ref(ball_position), std::ref(mtx)};
-        thread2 = std::thread{fussball_system, std::ref(ball_position), std::ref(mtx)};
+        // thread1 = std::thread{opencv, std::ref(ball_position), std::ref(mtx)};
+        // thread2 = std::thread{fussball_system, std::ref(ball_position), std::ref(mtx)};
+        thread1 = std::thread{big_motor_opperate, std::ref(big_motor_row0)};
+        thread2 = std::thread{small_motor_opperate, std::ref(small_motor_row0)};
+
+
+        // std::cout << "Hello World" << std::endl;
     }
     catch (const std::exception &e)
     {

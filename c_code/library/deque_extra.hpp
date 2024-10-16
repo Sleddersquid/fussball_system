@@ -14,7 +14,7 @@ private:
     int m_max_size = max_size;
 public:
     max_deque() {
-        std::cout << "created a deque with max length of" << std::to_string(m_max_size) << std::endl;
+        std::cout << "Created a deque with max length of " << std::to_string(m_max_size) << std::endl;
     }
 
     void push_front(T val) {

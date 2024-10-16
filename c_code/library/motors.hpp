@@ -17,7 +17,7 @@ class MAX_LIMIT_FOR_STEPS_REACHED {};
 // 2 - The big motors has a limit of how many steps it can take. The small motors does not have this limit.
 
 /**
- * @brief This motor has a limit of how many steps it can take, and a bigger delay between the pulses
+ * @brief This motor has a limit of how many steps it can take, and a bigger delay between the pulses.
  * @param pulse_pin - The pin (GPIO) that the pulse signal is connected to
  * @param dir_pin - The pin (GPIO) that the direction signal is connected to
  * @param chip - The GPIO chip for opening the lines 
@@ -35,7 +35,7 @@ private:
 
     // Should be 1600. What is this? 1650
     int steps_per_rev = 1600;
-    float sleep_time = 0.000040; // 40 us
+    float sleep_time = 600; // 90 us
     int steps_taken = 0;
 
     // Sets a threshold of 2000 steps
@@ -54,7 +54,8 @@ public:
     ~Big_Stepper_motor();
 
     /**
-     * @brief Operates the motor in revolutions (360 degrees). Is limited to 2000 steps
+     * @brief Operates the motor in revolutions (360 degrees). Is limited to 2000 steps.
+     * 1 is into the table, and 0 is away from the table
      * @param revs - The number of revolutions the motor should do.
      * @param dir - The direction the motor should go. False is forward, True is backwards
      */
@@ -86,7 +87,8 @@ public:
 
 
 /**
- * @brief This motor doesn't have a limit of how many steps it can take, and smaller delay between the pulses
+ * @brief This motor doesn't have a limit of how many steps it can take, and smaller delay between the pulses.
+ * 1 is into the table, and 0 is away from the table
  * @param pulse_pin - The pin (GPIO) that the pulse signal is connected to
  * @param dir_pin - The pin (GPIO) that the direction signal is connected to
  * @param chip - The GPIO chip for opening the lines 
@@ -104,7 +106,7 @@ private:
 
     // Should be 1600. What is this? // 1610
     int steps_per_rev = 1600;
-    float sleep_time = 0.000001; // 1 us
+    float sleep_time = 0.1; // 10 us
     int steps_taken = 0;
 
     int m_last_angle = 0;
@@ -114,6 +116,12 @@ public:
 
     ~Small_Stepper_motor();
 
+    /**
+     * @brief Operates the motor in revolutions (360 degrees). Is has no limit.
+     * 1 is into the table, and 0 is away from the table.
+     * @param revs - The number of revolutions the motor should do.
+     * @param dir - The direction the motor should go. False is forward, True is backwards
+     */
     void opperate(int revs, bool dir);
 
     // Don't think this one is needed. Maybe just do full revoloutions
