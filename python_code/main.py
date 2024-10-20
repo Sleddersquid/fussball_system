@@ -12,11 +12,11 @@ import time
 
 # Vekk fra bordet
 def forwards(motor, steps):
-    motor.steps_opperate(steps, 0)
+    motor.steps_opperate(steps, 0) # clockwise
     
 # Nærmere mot bordet, alså innover i mot bordet
 def backwards(motor, steps):
-    motor.steps_opperate(steps, 1)
+    motor.steps_opperate(steps, 1) # counter clockwise
 
 # Gjør en bevegelse fram og tilbake, n ganger, 1000 steps om gangen
 def back_and_forth(motor, n):
