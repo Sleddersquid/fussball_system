@@ -10,20 +10,18 @@ import numpy as np
 # import imutils
 import time
 
-
+# Vekk fra bordet
 def forwards(motor, steps):
-    motor.steps_opperate(steps, 0) # Vekk fra bordet
+    motor.steps_opperate(steps, 0)
     
-    
+# Nærmere mot bordet, alså innover i mot bordet
 def backwards(motor, steps):
-    motor.steps_opperate(steps, 1) # Nærmere mot bordet
+    motor.steps_opperate(steps, 1)
 
-
+# Gjør en bevegelse fram og tilbake, n ganger, 1000 steps om gangen
 def back_and_forth(motor, n):
     for i in range(0, n):
         motor.steps_opperate(1000, 1+(-1)**i)
-
-
 
 def main():
     stor_motor = pi5modules.Big_Stepper_Motor(20, 21, "Motor1", 0) # 23, 24
@@ -44,13 +42,9 @@ def main():
         # time.sleep(2)
     
     # forwards(stor_motor, 200)
-    backwards(stor_motor, 1000)
-    
+    # backwards(stor_motor, 1000)
     
     # forwards(stor_motor, 200)
-    
-    
-    
     
     # backwards(liten_motor, 200)
     # back_and_forth(stor_motor, 2)
