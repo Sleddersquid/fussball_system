@@ -19,12 +19,9 @@ cv.createTrackbar("Upper H", "Trackbar Window", 179, 179, lambda a: ())
 cv.createTrackbar("Upper S", "Trackbar Window", 255, 255, lambda a: ())
 cv.createTrackbar("Upper V", "Trackbar Window", 255, 255, lambda a: ())
 
-# try:
-    # global vs
-vs = VideoStream(src=1).start()
-# except:
-    # vs = VideoStream(src=0).start()
 
+# Takes long time to start the camera. IDK why
+vs = VideoStream(src=1).start()
 
 time.sleep(2)
 
