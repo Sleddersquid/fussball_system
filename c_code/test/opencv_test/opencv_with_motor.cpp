@@ -1,7 +1,28 @@
 #include <opencv2/opencv.hpp>
 #include <iostream>
 
-// CHAT GPT KODE. 
+#include <unistd.h>
+#include <gpiod.hpp>
+
+// Absolute path. Should be reviced under revision
+#include "include_cpp_file/motors.cpp"
+#include "library/deque_extra.hpp"
+
+gpiod::chip chip("gpiochip0");
+
+// This needs to be better organized in the future.
+int big_motor1_pulse_pin = 20;
+int big_motor1_dir_pin = 21;    
+
+int small_motor1_pulse_pin = 23;
+int small_motor1_dir_pin = 24;
+
+// Open the GPIO chip
+// Connect to the GPIO line
+Big_Stepper_motor big_motor1(big_motor1_pulse_pin, big_motor1_dir_pin, chip, 0);
+Small_Stepper_motor small_motor1(small_motor1_pulse_pin, small_motor1_dir_pin, chip, 0);
+
+// OPENCV ER CHAT GPT KODE. 
 
 // Function to calculate the center of a contour using moments
 cv::Point calculateCenter(const std::vector<cv::Point>& contour) {

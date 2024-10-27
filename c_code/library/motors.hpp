@@ -106,7 +106,7 @@ private:
 
     // Should be 1600. What is this? // 1610
     int steps_per_rev = 1600;
-    float sleep_time = 0.1; // 10 us
+    float sleep_time = 0.1; // 0.1 us
     int steps_taken = 0;
 
     int m_last_angle = 0;

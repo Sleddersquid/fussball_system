@@ -104,7 +104,6 @@ void fussball_system(max_deque<cv::Point_<int>, MAX_LEN_DEQUE> &ball_position, s
     }
 }
 
- 
 
 
 // ------------------ MOTOR FUNCTIONS ------------------ //

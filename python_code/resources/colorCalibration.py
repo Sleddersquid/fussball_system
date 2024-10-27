@@ -21,7 +21,10 @@ cv.createTrackbar("Upper V", "Trackbar Window", 255, 255, lambda a: ())
 
 
 # Takes long time to start the camera. IDK why
-vs = VideoStream(src=1).start()
+try:
+    vs = VideoStream(src=1).start()
+except:
+    vs = VideoStream(src=0).start()
 
 time.sleep(2)
 
@@ -44,7 +47,8 @@ while True:
     result = cv.bitwise_and(frame, frame, mask=mask)    
 
     # show thresholded image
-    cv.imshow("mask", mask)
+    cv.imshow("frame", frame)
+    # cv.imshow("mask", mask)
     cv.imshow("result", result)  
 
     key = cv.waitKey(1) & 0xFF
