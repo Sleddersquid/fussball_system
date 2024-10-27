@@ -4,11 +4,19 @@
 #include <unistd.h>
 #include <gpiod.hpp>
 
-// Absolute path. Should be reviced under revision
+// Absolute path. Should be redone under revision.
 #include "include_cpp_file/motors.cpp"
 #include "library/deque_extra.hpp"
 
+#define MAX_LEN_DEQUE 32
+
+// OPENCV IS CHAT GPT CODE.
+
 gpiod::chip chip("gpiochip0");
+
+cv::Point_<int> center_point[1] = { 300, 300 }; // Can this be done like this?
+
+max_deque<cv::Point_<int>, MAX_LEN_DEQUE> pts;
 
 // This needs to be better organized in the future.
 int big_motor1_pulse_pin = 20;
@@ -29,7 +37,6 @@ cv::Point calculateCenter(const std::vector<cv::Point>& contour) {
     cv::Moments M = cv::moments(contour);
     if (M.m00 != 0) {
         // See https://docs.opencv.org/3.4/d8/d23/classcv_1_1Moments.html for center (x¯, y¯)
-        // 
         return cv::Point(static_cast<int>(M.m10 / M.m00), static_cast<int>(M.m01 / M.m00));
     } else {
         return cv::Point(0, 0); // Return a dummy value if contour area is zero
@@ -38,12 +45,13 @@ cv::Point calculateCenter(const std::vector<cv::Point>& contour) {
 
 int main() {
     // Define lower and upper boundaries for the "green" ball in HSV color space
+    // Needs to be redone to the red scale. May need to "fuse" the two masks since red is on both ends of the color scale
     cv::Scalar greenLower(18, 100, 204);
     cv::Scalar greenUpper(26, 100, 204);
 
     // Deque to store tracked points (32 maximum points)
-    std::deque<cv::Point> pts;
-    const int maxPoints = 32;
+    // std::deque<cv::Point> pts;
+    // const int maxPoints = 32;
 
     // Open the default camera
     cv::VideoCapture cap(0);
@@ -108,20 +116,23 @@ int main() {
             }
         }
 
+        // Move the motor to the angle
+        int angle = atan2(center.y - 300, center.x - 300) * (180 / 3.14159265);
+
+        big_motor1.go_to_angle(angle);
+        small_motor1.go_to_angle(angle);
+
         // Update the deque with the new center
-        pts.push_front(center);
-        if (pts.size() > maxPoints) {
-            pts.pop_back();
-        }
+        pts.push_back(center);
 
         // Optionally draw connecting lines between points
-        for (size_t i = 1; i < pts.size(); ++i) {
-            if (pts[i - 1] == cv::Point(0, 0) || pts[i] == cv::Point(0, 0)) {
-                continue;
-            }
-            int thickness = static_cast<int>(sqrt(32.0 / (i + 1)) * 2.5);
-            cv::line(frame, pts[i - 1], pts[i], cv::Scalar(0, 0, 255), thickness);
-        }
+        // for (size_t i = 1; i < pts.size(); ++i) {
+        //     if (pts[i - 1] == cv::Point(0, 0) || pts[i] == cv::Point(0, 0)) {
+        //         continue;
+        //     }
+        //     int thickness = static_cast<int>(sqrt(32.0 / (i + 1)) * 2.5);
+        //     cv::line(frame, pts[i - 1], pts[i], cv::Scalar(0, 0, 255), thickness);
+        // }
 
         // Show the frame and the mask
         cv::imshow("Frame", frame);

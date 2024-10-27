@@ -53,7 +53,7 @@ public:
         return deque.back();
     }
 
-    int get_size() {
+    int size() {
         return deque.size();
     }
 };
