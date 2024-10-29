@@ -150,13 +150,17 @@ void Small_Stepper_motor::steps_opperate(int steps, bool dir) {
     }
 };
 
-void Small_Stepper_motor::go_to_angle(int new_angle) {
+void Small_Stepper_motor::go_to_angle(int new_angle_deg) {
     
     // d_new - d_old = angle to move to
     // The direction the motor should go. False (0) is forward, True (1) is backwards
     // Have to cumpute this first
-    int angle = new_angle - this->m_last_angle;
+    int angle = new_angle_deg - this->m_last_angle;
     int steps = int(abs(angle)*(steps_per_rev)/360);
+
+    // if (steps < 100) {
+    //     return;
+    // }
 
     int dir = 0;
     // 0 is forwards, 1 is backwards
@@ -168,8 +172,9 @@ void Small_Stepper_motor::go_to_angle(int new_angle) {
     // Since angle can be negative, steps cannot. Therefor abs(angle)
     
     this->steps_opperate(steps, dir);
+    // std::cout << "Steps: " << steps << ", dir: " << dir << std::endl;
 
-    this->m_last_angle = new_angle;
+    this->m_last_angle = new_angle_deg;
 }
 
 int Small_Stepper_motor::get_row() {

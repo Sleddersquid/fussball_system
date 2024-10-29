@@ -35,7 +35,7 @@ private:
 
     // Should be 1600. What is this? 1650
     int steps_per_rev = 1600;
-    float sleep_time = 600; // 90 us
+    float sleep_time = 80; // 90 us
     int steps_taken = 0;
 
     // Sets a threshold of 2000 steps
@@ -106,7 +106,7 @@ private:
 
     // Should be 1600. What is this? // 1610
     int steps_per_rev = 1600;
-    float sleep_time = 0.1; // 0.1 us
+    float sleep_time = 600; // 0.1 us
     int steps_taken = 0;
 
     int m_last_angle = 0;

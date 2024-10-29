@@ -5,6 +5,7 @@
 
 #include <gpiod.hpp>
 // Absolute path. Should be reviced under revision
+// #include "/include_cpp_file/motors.cpp"
 #include "include_cpp_file/motors.cpp"
 
 gpiod::chip chip("gpiochip0");
@@ -29,7 +30,7 @@ Small_Stepper_motor small_motor1(small_motor1_pulse_pin, small_motor1_dir_pin, c
 
 int main()
 {
-    usleep(100000); // 100 milisec
+    // usleep(100000); // 100 milisec
 
     // 0 er vekk fra bordet
     // 1 er mot bordet
@@ -44,9 +45,22 @@ int main()
 
         // }
 
-        // big_motor1.steps_opperate(1200, 0);
-        small_motor1.steps_opperate(10000, 1);
-    
+        auto start = std::chrono::high_resolution_clock::now();
+
+        big_motor1.opperate(1, 0);
+
+        auto end = std::chrono::high_resolution_clock::now();
+        std::chrono::duration<double> elapsed = end - start;
+        std::cout << "Time taken, big motor: " << elapsed.count() << " seconds" << std::endl;
+
+
+        auto start1 = std::chrono::high_resolution_clock::now();
+
+        small_motor1.opperate(1, 0);
+
+        auto end2 = std::chrono::high_resolution_clock::now();
+        std::chrono::duration<double> elapsed1 = end2 - start1;
+        std::cout << "Time taken, small motor: " << elapsed1.count() << " seconds" << std::endl;
 
 
     }

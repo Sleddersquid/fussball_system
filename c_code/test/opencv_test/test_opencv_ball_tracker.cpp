@@ -34,10 +34,13 @@ int main() {
 
     // Allow the camera to warm up
     cv::waitKey(2000);
+    cv::Mat frame;
+
 
     // Main loop
     while (true) {
-        cv::Mat frame;
+        auto start = std::chrono::high_resolution_clock::now();
+
         cap >> frame; // Capture the current frame
         if (frame.empty()) {
             std::cerr << "Error: Could not capture frame." << std::endl;
@@ -95,26 +98,29 @@ int main() {
         }
 
         // Optionally draw connecting lines between points
-        for (size_t i = 1; i < pts.size(); ++i) {
-            if (pts[i - 1] == cv::Point(0, 0) || pts[i] == cv::Point(0, 0)) {
-                continue;
-            }
-            int thickness = static_cast<int>(sqrt(32.0 / (i + 1)) * 2.5);
-            cv::line(frame, pts[i - 1], pts[i], cv::Scalar(0, 0, 255), thickness);
-        }
+        // for (size_t i = 1; i < pts.size(); ++i) {
+        //     if (pts[i - 1] == cv::Point(0, 0) || pts[i] == cv::Point(0, 0)) {
+        //         continue;
+        //     }
+        //     int thickness = static_cast<int>(sqrt(32.0 / (i + 1)) * 2.5);
+        //     cv::line(frame, pts[i - 1], pts[i], cv::Scalar(0, 0, 255), thickness);
+        // }
 
         // Show the frame and the mask
         cv::imshow("Frame", frame);
         cv::imshow("Mask", mask);
 
         // Check if 'q' was pressed to exit the loop
-        char key = static_cast<char>(cv::waitKey(1));
+        char key = static_cast<char>(cv::waitKey(1000/60));
         if (key == 'q') {
             break;
         }
 
         // Add a short sleep (simulating time.sleep(0.1) in Python)
-        cv::waitKey(100);
+        // cv::waitKey(100);
+        auto end = std::chrono::high_resolution_clock::now();
+        std::chrono::duration<double> elapsed = end - start;
+        std::cout << "Time taken: " << elapsed.count() << " seconds" << std::endl;
     }
 
     // Release the video stream and close windows
