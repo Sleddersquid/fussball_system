@@ -1,18 +1,14 @@
 #include <iostream>
 #include <chrono>
-#include "include_cpp_file/motors.cpp"
 
 
-gpiod::chip chip("gpiochip0");
-
-Big_Stepper_motor big_motor_row0(23, 24, chip, 0);
-Small_Stepper_motor small_motor_row0(20, 21, chip, 0); 
+auto thread_start_time = std::chrono::high_resolution_clock::now();
 
 int main() {
 
-
-    
-
+    std::cout << typeid(thread_start_time).name() << std::endl;
 
 
+    std::cout << "Hello World" << std::endl;
+    return 0;
 }

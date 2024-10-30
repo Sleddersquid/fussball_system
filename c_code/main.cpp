@@ -15,49 +15,54 @@
 #include <opencv2/opencv.hpp>
 #include <lccv.hpp>
 
-// For the Motors, Rows and The deque
+// For the motors and the deque
 #include "include_cpp_file/motors.cpp"
 // #include "library/motors.hpp"
 #include "library/deque_extra.hpp"
 #include <deque>
-#include "library/Row.hpp"
+// #include "library/Row.hpp"
 
 #define PI 3.14159265
 
 #define MAX_LEN_DEQUE 32
 
-// avg FPS at HD is 111.111, and at FHD is 48.478 
+// avg FPS at HD is 125 without computhon center, with center computing, 111.111, and at FHD is 48.478 
 #define CAMERA_HEIGHT 720       // Can be SD: 480, HD: 720, FHD: 1080, QHD: 1440
 #define CAMERA_WIDTH 1280       // Can be SD: 640, HD: 1280, FHD: 1920, QHD: 2560
-#define CAMERA_FRAMERATE 120    // If fps higher than what the thread maneges, it will just run lower fps.
+#define CAMERA_FRAMERATE 120    // If fps higher than what the thread can handle, it will just run lower fps.
+
+#define SECONDS_ACTIVE 20
 
 // ------------------------ TODO: ------------------------ //
 // 1 - Make an algorithm that chooses what row and another alogrithm for the players
+
 
 // ------------------ GLOBAL VARIABLES ------------------ //
 
 // Opening the GPIO chip
 // The chip dosen't need to be closed/resources freed, it does so automatically when all the lines are dropped/released.
-gpiod::chip chip("gpiochip0");
+// gpiod::chip chip("gpiochip0");
 
 // ------------------ INIT OF MOTORS ------------------ //
 // All the pins are numbered after the GPIO pins, and not the lines
 
-// First row
-Big_Stepper_motor big_motor_row0(23, 24, chip, 0);
-Small_Stepper_motor small_motor_row0(20, 21, chip, 0);
+// First row -- Initialized inside the thread
+// Big_Stepper_motor big_motor_row0(23, 24, chip, 0);
+// Small_Stepper_motor small_motor_row0(20, 21, chip, 0);
 
-// Second row
-Big_Stepper_motor big_motor_row1(2, 3, chip, 1);
-Small_Stepper_motor small_motor_row1(14, 15, chip, 1);
+// // Second row
+// Big_Stepper_motor big_motor_row1(2, 3, chip, 1);
+// Small_Stepper_motor small_motor_row1(14, 15, chip, 1);
 
-// Third row
-Big_Stepper_motor big_motor_row2(17, 18, chip, 2);
-Small_Stepper_motor small_motor_row2(4, 5, chip, 2);
+// // Third row
+// Big_Stepper_motor big_motor_row2(17, 18, chip, 2);
+// Small_Stepper_motor small_motor_row2(4, 5, chip, 2);
 
-// Fourth row
-Big_Stepper_motor big_motor_row3(12, 13, chip, 3);
-Small_Stepper_motor small_motor_row3(10, 11, chip, 3);
+// // Fourth row
+// Big_Stepper_motor big_motor_row3(12, 13, chip, 3);
+// Small_Stepper_motor small_motor_row3(10, 11, chip, 3);
+
+
 
 // ------------------ INIT OF ROWS ------------------ //
 
@@ -68,18 +73,13 @@ Small_Stepper_motor small_motor_row3(10, 11, chip, 3);
  * @param contour - The contour to calculate the center of
  * @return The center of the contour as cv::Point
  */
-cv::Point calculateCenter(const std::vector<cv::Point> &contour)
-{
+cv::Point calculateCenter(const std::vector<cv::Point> &contour) {
     cv::Moments M = cv::moments(contour);
-    if (M.m00 != 0)
-    {
+    if (M.m00 != 0) {
         // See https://docs.opencv.org/3.4/d8/d23/classcv_1_1Moments.html for center (x¯, y¯)
         return cv::Point(static_cast<int>(M.m10 / M.m00), static_cast<int>(M.m01 / M.m00));
     }
-    else
-    {
-        return cv::Point(0, 0); // Return a dummy value if contour area is zero
-    }
+    return cv::Point(0, 0); // Return a dummy value if contour area is zero
 }
 
 long long getTimestamp()
@@ -90,124 +90,35 @@ long long getTimestamp()
 }
 
 // --------------- Func for the threads --------------- //
-// void opencv(max_deque<cv::Point_<int>, MAX_LEN_DEQUE> &ball_position, std::mutex &mtx)
-// {
+int opencv(std::array<cv::Point, 3> &array_ball_pos, std::mutex &mtx) {
+    int framesNumber = 0;
+    long long startTime = getTimestamp();
+    long long totalTime = 0;
 
-//     while (true)
-//     {
-//         /* code */
-//     }
-// }
-
-// void fussball_system(max_deque<cv::Point_<int>, MAX_LEN_DEQUE> &ball_position, std::mutex &mtx)
-// {
-//     int theta;
-//     // cv::Point_<int> ball_pos;
-
-//     while (true)
-//     {
-//         // This needs a lock
-//         mtx.lock();
-//         // ball_pos = ball_position.back();
-//         mtx.unlock();
-//         // Calculate the angle of position of the ball
-//         // Since atan gives radians, convert it to degrees
-//         // theta = atan2(ball_pos.y - 300, ball_pos.x - 300) * (180 / PI);
-
-//         // small_motor_row0.go_to_angle(theta);
-//     }
-// }
-
-
-void fussball_single_motor(cv::Point ball_pos, Small_Stepper_motor &motor)
-{
-    int theta;
-    theta = atan2(ball_pos.y - CAMERA_HEIGHT/2, ball_pos.x - CAMERA_WIDTH/2) * (180 / PI);
-
-    motor.go_to_angle(theta);
-}
-
-// ------------------ MOTOR FUNCTIONS ------------------ //
-// Just som functions to operate the motors in a thread
-void big_motor_opperate(Big_Stepper_motor &motor)
-{
-    motor.steps_opperate(1600, 1);
-    std::cout << "End of thread 1" << std::endl;
-}
-
-void small_motor_opperate(Small_Stepper_motor &motor)
-{
-    motor.opperate(20, 0);
-    std::cout << "End of thread 2" << std::endl;
-}
-
-// void catcher()
-// {
-
-//     // Initialization of mutex
-//     std::mutex mtx;
-
-//     // Create the threads
-//     std::thread thread1;
-//     std::thread thread2;
-
-//     try
-//     {
-//         // thread1 = std::thread{opencv, std::ref(ball_position), std::ref(mtx)};
-//         // thread2 = std::thread{fussball_system, std::ref(ball_position), std::ref(mtx)};
-//         thread1 = std::thread{big_motor_opperate, std::ref(big_motor_row0)};
-//         thread2 = std::thread{small_motor_opperate, std::ref(small_motor_row0)};
-
-//         // std::cout << "Hello World" << std::endl;
-//     }
-//     catch (const std::exception &e)
-//     {
-//         std::cerr << e.what() << std::endl;
-//     }
-
-//     // Join the threads
-//     thread1.join();
-//     thread2.join();
-
-//     // There looks like there is no need to close the gpio chip.
-//     // Only need to release the lines, and that is done in the destructor of the motor class
-//     std::cout << "End of file" << std::endl;
-// }
-
-// ------------------ MAIN VARIABLES ------------------ //
-
-cv::Mat image, mask, HSV;
-lccv::PiCamera cam;
-
-cv::Scalar hsv_l(0, 120, 120);
-cv::Scalar hsv_h(10, 255, 255);
-
-max_deque<cv::Point, MAX_LEN_DEQUE> ball_position;
-
-int framesNumber = 0;
-long long startTime = getTimestamp();
-long long totalTime = 0;
-
-// ------------------ MAIN FUNCTION ------------------ //
-int main()
-{
     std::cout << "Sample program for LCCV video capture" << std::endl;
     std::cout << "Press ESC to stop. (Does not work if no window is displayed)" << std::endl;
+
+    cv::Mat image, mask, HSV;
+    lccv::PiCamera cam;
+
+    cv::Scalar hsv_l(0, 120, 120);
+    cv::Scalar hsv_h(10, 255, 255);
 
     cam.options->video_width = CAMERA_WIDTH;
     cam.options->video_height = CAMERA_HEIGHT;
     cam.options->framerate = CAMERA_FRAMERATE;
     cam.options->verbose = true;
+    cam.options->list_cameras = true;
 
     // cv::namedWindow("Video", cv::WINDOW_NORMAL);
+    // cv::namedWindow("Mask", cv::WINDOW_NORMAL);
     cam.startVideo();
     int ch = 0;
 
-    auto start_cpu_time = std::chrono::high_resolution_clock::now();
-
-    while (ch != 27) {
+    auto thread_start_time = std::chrono::high_resolution_clock::now();
+    while (true) {
         if (!cam.getVideoFrame(image, 1000)) {
-            std::cout << "Timeout error" << std::endl;
+            std::cerr << "Timeout error" << std::endl;
         }
         else {
             cv::cvtColor(image, HSV, cv::COLOR_BGR2HSV);
@@ -244,45 +155,124 @@ int main()
                 //     cv::circle(image, center, 5, cv::Scalar(0, 0, 255), -1);
                 // }
             }
-            // ball_position.push_front(center);
 
-            // // Compare the time
-            // auto end = std::chrono::high_resolution_clock::now();
-            // std::chrono::duration<double> elapsed_seconds = end - start;
-            // std::cout << "Time taken: " << elapsed_seconds.count() << "s" << std::endl;
+            std::cout << "center x: " << center.x << " center y: " << center.y << std::endl;
 
-            // move to certain angle
-            if(center.x != 0 && center.y != 0) {
-                fussball_single_motor(center, small_motor_row0);
+            if (mtx.try_lock()) {
+                array_ball_pos[2] = center;
+                mtx.unlock();
             }
 
-            // --------------------- For drawing the path of the ball --------------------- //
-            // for (size_t i = 1; i < ball_position.size(); ++i) {
-            //     if (ball_position[i - 1] == cv::Point(0, 0) || ball_position[i] == cv::Point(0, 0)) {
+            framesNumber++;
+
+            // ----------------- For drawing the path of the ball ----------------- //
+            // for (size_t i = 1; i < deque_ball_pos.size(); ++i) {
+            //     if (deque_ball_pos[i - 1] == cv::Point(0, 0) || deque_ball_pos[i] == cv::Point(0, 0)) {
             //         continue;
             //     }
             //     int thickness = static_cast<int>(sqrt(32.0 / (i + 1)) * 2.5);
-            //     cv::line(image, ball_position[i - 1], ball_position[i], cv::Scalar(0, 0, 255), thickness);
+            //     cv::line(image, deque_ball_pos[i - 1], deque_ball_pos[i], cv::Scalar(0, 0, 255), thickness);
             // }
 
             // cv::imshow("Video", image);
             // cv::imshow("Mask", mask);
-            char key = static_cast<char>(cv::waitKey(1));
-            if (key == 'q') {
-                std::cout << "yippi" << std::endl;
+
+            if ((std::chrono::high_resolution_clock::now() - thread_start_time) > std::chrono::seconds{SECONDS_ACTIVE}) {
                 break;
             }
-
-            if ((std::chrono::high_resolution_clock::now() - start_cpu_time) > std::chrono::seconds{40}) {
-                break;
-            }      
         }
+        // totalTime = getTimestamp();
+        // float avgFPS = (totalTime -startTime)/ 1000 / framesNumber;
+        // std::cerr << "Average FPS: " << (1000 / avgFPS) << std::endl;
     }
-
-    small_motor_row0.go_to_angle(0);
-
+    
     cam.stopVideo();
     // cv::destroyWindow("Video");
+    // cv::destroyWindow("Mask");
+    return 0;
+}
+
+// The multiple params may need to be adjusted
+void fussball_system(std::array<cv::Point, 3> &array_ball_pos, std::mutex &mtx)
+{
+    gpiod::chip chip("gpiochip0");
+
+    Big_Stepper_motor big_motor_row0(23, 24, chip, 0);
+    Small_Stepper_motor small_motor_row0(20, 21, chip, 0);
+
+    int theta;
+    cv::Point ball_pos;
+
+    auto thread_start_time = std::chrono::high_resolution_clock::now();
+    while (true)
+    {
+        // This needs a lock
+        // mtx.native_handle
+        if (mtx.try_lock()) {
+            ball_pos = array_ball_pos[2];
+            mtx.unlock();
+        } else {
+            continue;
+        }
+
+        if (ball_pos.x == 0 and ball_pos.y == 0) {
+            continue;
+        }
+
+        theta = atan2(ball_pos.y - CAMERA_HEIGHT/2, ball_pos.x - CAMERA_WIDTH/2) * (180 / PI);
+
+        small_motor_row0.go_to_angle(theta);
+
+        if ((std::chrono::high_resolution_clock::now() - thread_start_time) > std::chrono::seconds{SECONDS_ACTIVE}) {
+            break;
+        }
+
+    }
+}
+
+// void fussball_single_motor(cv::Point ball_pos, Small_Stepper_motor &motor)
+// {
+//     int theta;
+//     theta = atan2(ball_pos.y - CAMERA_HEIGHT/2, ball_pos.x - CAMERA_WIDTH/2) * (180 / PI);
+
+//     motor.go_to_angle(theta);
+// }
+
+// ------------------ MAIN VARIABLES ------------------ //
+
+std::atomic<std::array<cv::Point, 3>> deque_ball_pos;
+
+// Initialization of mutex
+std::mutex mtx;
+
+// Create the threads
+std::thread thread1;
+std::thread thread2;
+
+int a = 0;
+// ------------------ MAIN FUNCTION ------------------ //
+int main()
+{
+
+    try {
+        thread1 = std::thread{opencv, std::ref(deque_ball_pos), std::ref(mtx)};
+        thread2 = std::thread{fussball_system, std::ref(deque_ball_pos), std::ref(mtx)};
+    }
+    catch (const std::exception &e) {
+        std::cerr << e.what() << std::endl;
+    }
+    // thread1 = std::thread{big_motor_opperate, std::ref(big_motor_row0)};
+    // thread2 = std::thread{small_motor_opperate, std::ref(small_motor_row0)};
+
+        // Join the threads
+    std::cout << "Closing the threads" << std::endl;
+    thread1.join();
+    thread2.join();
+    std::cout << "Threads closed" << std::endl;
+
+
+    // There looks like there is no need to close the gpio chip.
+    // Only need to release the lines, and that is done in the destructor of the motor class
     std::cout << "End of file" << std::endl;
     return 0;
 }

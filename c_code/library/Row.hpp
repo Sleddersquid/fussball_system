@@ -1,12 +1,12 @@
 #include "motors.hpp"
 #include <array>
-
+#include <opencv2/opencv.hpp>
 
 
 // This class uses template to set the size of the array. It also set the number of players in the row
 /**
  * @brief This class is used to controll both motors, the small and big one, and does the decision making for the row
- * @param array_size, m_number_of_players  - The number of players in the row
+ * @tparam array_size - The number of players in the row, and defines the size of m_player_positions
  * @param big_motor - The big motor in the row
  * @param small_motor - The small motor in the row
  * @param number_of_players - The number of players in the row
@@ -35,4 +35,9 @@ public:
         // if r nagative, then go backwards
         // if theta negative, then go left
     }
+
+    
+
+
+
 };

@@ -106,6 +106,13 @@ int Big_Stepper_motor::get_row() {
 };
 
 
+void Big_Stepper_motor::reset() {
+    this->go_to_angle(0);
+}
+
+
+
+
 
 // The small motor has no limit of how many steps it can take
 // ------------------------------ SMALL MOTOR ------------------------------ //
@@ -180,4 +187,11 @@ void Small_Stepper_motor::go_to_angle(int new_angle_deg) {
 int Small_Stepper_motor::get_row() {
     return this->m_row;
 };
+
+
+
+void Small_Stepper_motor::reset() {
+    this->go_to_angle(0);
+}
+
 

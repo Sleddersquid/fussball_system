@@ -82,6 +82,8 @@ public:
      * @return The row of the motor
      */
     int get_row();
+
+    void reset();
 };
 
 
@@ -130,6 +132,8 @@ public:
     void go_to_angle(int angle);
 
     int get_row();
+
+    void reset();
 };
 
 #endif // MYCLASSES_HPP

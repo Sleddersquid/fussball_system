@@ -160,7 +160,7 @@ int opencv(max_deque<cv::Point, MAX_LEN_DEQUE> &ball_position, std::mutex &mtx) 
                 mtx.unlock();
             }
 
-            framesNumber++;
+            // framesNumber++;
 
             // ----------------- For drawing the path of the ball ----------------- //
             // for (size_t i = 1; i < ball_position.size(); ++i) {
@@ -209,8 +209,8 @@ void fussball_system(max_deque<cv::Point, MAX_LEN_DEQUE> &ball_position, std::mu
         small_motor_row0.go_to_angle(theta);
 
         // move to certain angle
-        if(center.x != 0 && center.y != 0) {
-            fussball_single_motor(center, small_motor_row0);
+        if(ball_pos.x != 0 && ball_pos.y != 0) {
+            fussball_single_motor(theta, small_motor_row0);
         }
 
     }
