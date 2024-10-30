@@ -15,10 +15,10 @@
 #include <opencv2/opencv.hpp>
 #include <lccv.hpp>
 
-// For the Motors, Rows and The deque
+// For the motors and the deque
 #include "include_cpp_file/motors.cpp"
 // #include "library/motors.hpp"
-#include "library/deque_extra.hpp"
+// #include "library/deque_extra.hpp"
 #include <deque>
 #include "library/Row.hpp"
 
@@ -184,6 +184,7 @@ cv::Scalar hsv_h(10, 255, 255);
 
 max_deque<cv::Point, MAX_LEN_DEQUE> ball_position;
 
+
 int framesNumber = 0;
 long long startTime = getTimestamp();
 long long totalTime = 0;
@@ -198,6 +199,7 @@ int main()
     cam.options->video_height = CAMERA_HEIGHT;
     cam.options->framerate = CAMERA_FRAMERATE;
     cam.options->verbose = true;
+    cam.options->list_cameras = true;
 
     // cv::namedWindow("Video", cv::WINDOW_NORMAL);
     cam.startVideo();
@@ -246,6 +248,9 @@ int main()
             }
             // ball_position.push_front(center);
 
+
+            framesNumber++;
+
             // // Compare the time
             // auto end = std::chrono::high_resolution_clock::now();
             // std::chrono::duration<double> elapsed_seconds = end - start;
@@ -273,11 +278,15 @@ int main()
                 break;
             }
 
-            if ((std::chrono::high_resolution_clock::now() - start_cpu_time) > std::chrono::seconds{40}) {
+            if ((std::chrono::high_resolution_clock::now() - start_cpu_time) > std::chrono::seconds{20}) {
                 break;
             }      
         }
     }
+
+    totalTime = getTimestamp();
+    float avgFPS = (totalTime -startTime)/ 1000 / framesNumber;
+    std::cerr << "Average FPS: " << (1000 / avgFPS) << std::endl;
 
     small_motor_row0.go_to_angle(0);
 

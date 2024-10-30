@@ -1,130 +1,134 @@
-#include <opencv2/opencv.hpp>
 #include <iostream>
+#include <vector>
 
+// For the threads and such
+#include <chrono>
 
-// OPENCV ER CHAT GPT KODE. 
+// For GPIO and OpenCV
+#include <opencv2/opencv.hpp>
+#include <lccv.hpp>
 
-// Function to calculate the center of a contour using moments
-cv::Point calculateCenter(const std::vector<cv::Point>& contour) {
+// For the Motors, Rows and The deque
+
+#define PI 3.14159265
+
+// avg FPS at HD is 111.111, and at FHD is 48.478 
+#define CAMERA_HEIGHT 720       // Can be SD: 480, HD: 720, FHD: 1080, QHD: 1440
+#define CAMERA_WIDTH 1280       // Can be SD: 640, HD: 1280, FHD: 1920, QHD: 2560
+#define CAMERA_FRAMERATE 120    // If fps higher than what the thread maneges, it will just run lower fps.
+
+// ------------------------ TODO: ------------------------ //
+// 1 - Make an algorithm that chooses what row and another alogrithm for the players
+
+// ------------------ GLOBAL VARIABLES ------------------ //
+
+/**
+ * @brief Function to calculate the center of a contour using moments
+ * @param contour - The contour to calculate the center of
+ * @return The center of the contour as cv::Point
+ */
+cv::Point calculateCenter(const std::vector<cv::Point> &contour)
+{
     cv::Moments M = cv::moments(contour);
     if (M.m00 != 0) {
         // See https://docs.opencv.org/3.4/d8/d23/classcv_1_1Moments.html for center (x¯, y¯)
-        // 
         return cv::Point(static_cast<int>(M.m10 / M.m00), static_cast<int>(M.m01 / M.m00));
-    } else {
+    }
+    else {
         return cv::Point(0, 0); // Return a dummy value if contour area is zero
     }
 }
 
-int main() {
-    // Define lower and upper boundaries for the "green" ball in HSV color space
-    cv::Scalar greenLower(18, 100, 204);
-    cv::Scalar greenUpper(26, 100, 204);
+cv::Mat image, mask, HSV;
+lccv::PiCamera cam;
 
-    // Deque to store tracked points (32 maximum points)
-    std::deque<cv::Point> pts;
-    const int maxPoints = 32;
+cv::Scalar hsv_l(0, 120, 120);
+cv::Scalar hsv_h(10, 255, 255);
 
-    // Open the default camera
-    cv::VideoCapture cap(0);
-    if (!cap.isOpened()) {
-        std::cerr << "Error: Could not open the video stream." << std::endl;
-        return -1;
-    }
+// ------------------ MAIN FUNCTION ------------------ //
+int main()
+{
+    std::cout << "Sample program for LCCV video capture" << std::endl;
+    std::cout << "Press ESC to stop. (Does not work if no window is displayed)" << std::endl;
 
-    // Allow the camera to warm up
-    cv::waitKey(2000);
-    cv::Mat frame;
+    cam.options->video_width = CAMERA_WIDTH;
+    cam.options->video_height = CAMERA_HEIGHT;
+    cam.options->framerate = CAMERA_FRAMERATE;
+    cam.options->verbose = true;
+    cam.options->list_cameras = true;
 
+    cam.startVideo();
 
-    // Main loop
+    auto start_cpu_time = std::chrono::high_resolution_clock::now();
+
     while (true) {
-        auto start = std::chrono::high_resolution_clock::now();
-
-        cap >> frame; // Capture the current frame
-        if (frame.empty()) {
-            std::cerr << "Error: Could not capture frame." << std::endl;
-            break;
+        if (!cam.getVideoFrame(image, 1000)) {
+            std::cout << "Timeout error" << std::endl;
         }
+        else {
+            cv::cvtColor(image, HSV, cv::COLOR_BGR2HSV);
 
-        // Resize the frame
-        cv::resize(frame, frame, cv::Size(600, 600));
+            cv::inRange(HSV, hsv_l, hsv_h, mask);
 
-        // Blur the frame and convert it to HSV color space
-        cv::Mat blurred, hsv;
-        cv::GaussianBlur(frame, blurred, cv::Size(11, 11), 0);
-        cv::cvtColor(blurred, hsv, cv::COLOR_BGR2HSV);
+            cv::erode(mask, mask, cv::Mat(), cv::Point(-1, -1), 1);
+            cv::dilate(mask, mask, cv::Mat(), cv::Point(-1, -1), 1);
 
-        // Create a mask for the color "green"
-        cv::Mat mask;
-        cv::inRange(hsv, greenLower, greenUpper, mask);
+            // Find contours in the mask
+            std::vector<std::vector<cv::Point>> contours;
+            cv::findContours(mask.clone(), contours, cv::RETR_EXTERNAL, cv::CHAIN_APPROX_SIMPLE);
 
-        // Erode and dilate to remove small blobs
-        cv::erode(mask, mask, cv::Mat(), cv::Point(-1, -1), 2);
-        cv::dilate(mask, mask, cv::Mat(), cv::Point(-1, -1), 2);
-
-        // Find contours in the mask
-        std::vector<std::vector<cv::Point>> contours;
-        cv::findContours(mask.clone(), contours, cv::RETR_EXTERNAL, cv::CHAIN_APPROX_SIMPLE);
-
-        cv::Point center(0, 0);
-        if (!contours.empty()) {
-            // Find the largest contour
-            std::vector<cv::Point> largestContour = *std::max_element(contours.begin(), contours.end(),
-                [](const std::vector<cv::Point>& a, const std::vector<cv::Point>& b) {
+            cv::Point center(0, 0);
+            if (!contours.empty()) {
+                // Find the largest contour
+                std::vector<cv::Point> largestContour = *std::max_element(contours.begin(), contours.end(),
+                [](const std::vector<cv::Point> &a, const std::vector<cv::Point> &b) {
                     return cv::contourArea(a) < cv::contourArea(b);
                 });
 
-            // Compute the minimum enclosing circle and center
-            float radius;
-            cv::Point2f enclosingCenter;
-            cv::minEnclosingCircle(largestContour, enclosingCenter, radius);
+                // Compute the minimum enclosing circle and center
+                float radius;
+                cv::Point2f enclosingCenter;
+                cv::minEnclosingCircle(largestContour, enclosingCenter, radius);
 
-            // Calculate the centroid (center of mass)
-            center = calculateCenter(largestContour);
+                // Calculate the centroid (center of mass)
+                center = calculateCenter(largestContour);
 
-            // Only proceed if the radius meets a minimum size
-            if (radius > 10) {
-                // Draw the circle and the centroid on the frame TODO: REMOVE THIS
-                cv::circle(frame, enclosingCenter, static_cast<int>(radius), cv::Scalar(0, 255, 255), 2);
-                cv::circle(frame, center, 5, cv::Scalar(0, 0, 255), -1);
+                // // Only proceed if the radius meets a minimum size
+                // if (radius > 10) {
+                //     // Draw the circle and the centroid on the frame TODO: REMOVE THIS
+                //     cv::circle(image, enclosingCenter, static_cast<int>(radius), cv::Scalar(0, 255, 255), 2);
+                //     cv::circle(image, center, 5, cv::Scalar(0, 0, 255), -1);
+                // }
             }
+
+            // std::cout << "center x: " << center.x << " center y: " << center.y << std::endl;
+
+            // move to certain angle
+
+            // --------------------- For drawing the path of the ball --------------------- //
+            // for (size_t i = 1; i < ball_position.size(); ++i) {
+            //     if (ball_position[i - 1] == cv::Point(0, 0) || ball_position[i] == cv::Point(0, 0)) {
+            //         continue;
+            //     }
+            //     int thickness = static_cast<int>(sqrt(32.0 / (i + 1)) * 2.5);
+            //     cv::line(image, ball_position[i - 1], ball_position[i], cv::Scalar(0, 0, 255), thickness);
+            // }
+
+            // cv::imshow("Video", image);
+            // cv::imshow("Mask", mask);
+            char key = static_cast<char>(cv::waitKey(1));
+            if (key == 'q') {
+                std::cout << "yippi" << std::endl;
+                break;
+            }
+
+            if ((std::chrono::high_resolution_clock::now() - start_cpu_time) > std::chrono::seconds{10}) {
+                break;
+            }      
         }
-
-        // Update the deque with the new center
-        pts.push_front(center);
-        if (pts.size() > maxPoints) {
-            pts.pop_back();
-        }
-
-        // Optionally draw connecting lines between points
-        // for (size_t i = 1; i < pts.size(); ++i) {
-        //     if (pts[i - 1] == cv::Point(0, 0) || pts[i] == cv::Point(0, 0)) {
-        //         continue;
-        //     }
-        //     int thickness = static_cast<int>(sqrt(32.0 / (i + 1)) * 2.5);
-        //     cv::line(frame, pts[i - 1], pts[i], cv::Scalar(0, 0, 255), thickness);
-        // }
-
-        // Show the frame and the mask
-        cv::imshow("Frame", frame);
-        cv::imshow("Mask", mask);
-
-        // Check if 'q' was pressed to exit the loop
-        char key = static_cast<char>(cv::waitKey(1000/60));
-        if (key == 'q') {
-            break;
-        }
-
-        // Add a short sleep (simulating time.sleep(0.1) in Python)
-        // cv::waitKey(100);
-        auto end = std::chrono::high_resolution_clock::now();
-        std::chrono::duration<double> elapsed = end - start;
-        std::cout << "Time taken: " << elapsed.count() << " seconds" << std::endl;
     }
 
-    // Release the video stream and close windows
-    cap.release();
-    cv::destroyAllWindows();
+    cam.stopVideo();
+    // cv::destroyWindow("Video");
     return 0;
 }

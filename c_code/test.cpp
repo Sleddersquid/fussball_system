@@ -11,9 +11,8 @@ Small_Stepper_motor small_motor_row0(20, 21, chip, 0);
 int main() {
 
 
-    small_motor_row0.opperate(1, 0);
-    small_motor_row0.opperate(1, 1);
+    
 
 
-    return 0;
+
 }
