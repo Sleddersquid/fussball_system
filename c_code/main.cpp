@@ -18,8 +18,8 @@
 // For the motors and the deque
 #include "include_cpp_file/motors.cpp"
 // #include "library/motors.hpp"
-#include "library/deque_extra.hpp"
-#include <deque>
+// #include "library/deque_extra.hpp"
+#include "library/threadsafe_containers/queue-threadsafe.hpp"
 // #include "library/Row.hpp"
 
 #define PI 3.14159265
@@ -29,9 +29,9 @@
 // avg FPS at HD is 125 without computhon center, with center computing, 111.111, and at FHD is 48.478 
 #define CAMERA_HEIGHT 720       // Can be SD: 480, HD: 720, FHD: 1080, QHD: 1440
 #define CAMERA_WIDTH 1280       // Can be SD: 640, HD: 1280, FHD: 1920, QHD: 2560
-#define CAMERA_FRAMERATE 120    // If fps higher than what the thread can handle, it will just run lower fps.
+#define CAMERA_FRAMERATE 101    // If fps higher than what the thread can handle, it will just run lower fps.
 
-#define SECONDS_ACTIVE 20
+#define SECONDS_ACTIVE 2
 
 // ------------------------ TODO: ------------------------ //
 // 1 - Make an algorithm that chooses what row and another alogrithm for the players
@@ -90,7 +90,9 @@ long long getTimestamp()
 }
 
 // --------------- Func for the threads --------------- //
-int opencv(std::array<cv::Point, 3> &array_ball_pos, std::mutex &mtx) {
+void opencv(std::threadsafe::queue<cv::Point> &deque_ball_pos) {
+    bool running = true;
+
     int framesNumber = 0;
     long long startTime = getTimestamp();
     long long totalTime = 0;
@@ -116,7 +118,7 @@ int opencv(std::array<cv::Point, 3> &array_ball_pos, std::mutex &mtx) {
     int ch = 0;
 
     auto thread_start_time = std::chrono::high_resolution_clock::now();
-    while (true) {
+    while (running) {
         if (!cam.getVideoFrame(image, 1000)) {
             std::cerr << "Timeout error" << std::endl;
         }
@@ -156,12 +158,7 @@ int opencv(std::array<cv::Point, 3> &array_ball_pos, std::mutex &mtx) {
                 // }
             }
 
-            std::cout << "center x: " << center.x << " center y: " << center.y << std::endl;
-
-            if (mtx.try_lock()) {
-                array_ball_pos[2] = center;
-                mtx.unlock();
-            }
+            deque_ball_pos.push(center);
 
             framesNumber++;
 
@@ -177,24 +174,27 @@ int opencv(std::array<cv::Point, 3> &array_ball_pos, std::mutex &mtx) {
             // cv::imshow("Video", image);
             // cv::imshow("Mask", mask);
 
-            if ((std::chrono::high_resolution_clock::now() - thread_start_time) > std::chrono::seconds{SECONDS_ACTIVE}) {
-                break;
-            }
         }
-        // totalTime = getTimestamp();
-        // float avgFPS = (totalTime -startTime)/ 1000 / framesNumber;
-        // std::cerr << "Average FPS: " << (1000 / avgFPS) << std::endl;
+        if ((std::chrono::high_resolution_clock::now() - thread_start_time) > std::chrono::seconds{SECONDS_ACTIVE}) {
+            running = false;
+        }
     }
+
+    totalTime = getTimestamp();
+    float avgFPS = (totalTime -startTime)/ 1000 / framesNumber;
+    std::cout << "Average FPS: " << (1000 / avgFPS) << std::endl;
     
     cam.stopVideo();
     // cv::destroyWindow("Video");
     // cv::destroyWindow("Mask");
-    return 0;
+    std::cout << "End of opencv" << std::endl;
 }
 
 // The multiple params may need to be adjusted
-void fussball_system(std::array<cv::Point, 3> &array_ball_pos, std::mutex &mtx)
+void fussball_system(std::threadsafe::queue<cv::Point> &deque_ball_pos)
 {
+    bool running = true;
+
     gpiod::chip chip("gpiochip0");
 
     Big_Stepper_motor big_motor_row0(23, 24, chip, 0);
@@ -204,30 +204,30 @@ void fussball_system(std::array<cv::Point, 3> &array_ball_pos, std::mutex &mtx)
     cv::Point ball_pos;
 
     auto thread_start_time = std::chrono::high_resolution_clock::now();
-    while (true)
+    while (running)
     {
         // This needs a lock
         // mtx.native_handle
-        if (mtx.try_lock()) {
-            ball_pos = array_ball_pos[2];
-            mtx.unlock();
-        } else {
-            continue;
-        }
+        deque_ball_pos.wait_pop(ball_pos);
+
 
         if (ball_pos.x == 0 and ball_pos.y == 0) {
             continue;
         }
 
-        theta = atan2(ball_pos.y - CAMERA_HEIGHT/2, ball_pos.x - CAMERA_WIDTH/2) * (180 / PI);
+        // deque_ball_pos.
 
-        small_motor_row0.go_to_angle(theta);
+        // theta = atan2(ball_pos.y - CAMERA_HEIGHT/2, ball_pos.x - CAMERA_WIDTH/2) * (180 / PI);
+
+        // small_motor_row0.go_to_angle(theta);
+
+        std::cout << "x: " << ball_pos.x << " y: " << ball_pos.y << std::endl;
 
         if ((std::chrono::high_resolution_clock::now() - thread_start_time) > std::chrono::seconds{SECONDS_ACTIVE}) {
-            break;
+            running = false;
         }
-
     }
+    std::cout << "End of fussball" << std::endl;
 }
 
 // void fussball_single_motor(cv::Point ball_pos, Small_Stepper_motor &motor)
@@ -240,14 +240,13 @@ void fussball_system(std::array<cv::Point, 3> &array_ball_pos, std::mutex &mtx)
 
 // ------------------ MAIN VARIABLES ------------------ //
 
-std::atomic<std::array<cv::Point, 3>> deque_ball_pos;
-
-// Initialization of mutex
-std::mutex mtx;
+// std::atomic<std::array<cv::Point, 3>> deque_ball_pos;
+// The mutex is in the threadsafe queue
+std::threadsafe::queue<cv::Point> deque_ball_pos;
 
 // Create the threads
-std::thread thread1;
-std::thread thread2;
+// std::thread thread1;
+// std::thread thread2;
 
 int a = 0;
 // ------------------ MAIN FUNCTION ------------------ //
@@ -255,21 +254,20 @@ int main()
 {
 
     try {
-        thread1 = std::thread{opencv, std::ref(deque_ball_pos), std::ref(mtx)};
-        thread2 = std::thread{fussball_system, std::ref(deque_ball_pos), std::ref(mtx)};
+        std::thread thread1 = std::thread(opencv, std::ref(deque_ball_pos));
+        std::thread thread2 = std::thread(fussball_system, std::ref(deque_ball_pos));
+
     }
     catch (const std::exception &e) {
         std::cerr << e.what() << std::endl;
     }
-    // thread1 = std::thread{big_motor_opperate, std::ref(big_motor_row0)};
-    // thread2 = std::thread{small_motor_opperate, std::ref(small_motor_row0)};
+    std::this_thread::sleep_for(std::chrono::seconds(SECONDS_ACTIVE + 1));
 
-        // Join the threads
+    // Join the threads
     std::cout << "Closing the threads" << std::endl;
     thread1.join();
     thread2.join();
     std::cout << "Threads closed" << std::endl;
-
 
     // There looks like there is no need to close the gpio chip.
     // Only need to release the lines, and that is done in the destructor of the motor class
