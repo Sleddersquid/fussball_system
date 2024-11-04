@@ -16,8 +16,7 @@
 #include <lccv.hpp>
 
 // For the motors and the deque
-#include "include_cpp_file/motors.cpp"
-// #include "library/motors.hpp"
+#include "library/motors.hpp"
 // #include "library/deque_extra.hpp"
 #include "library/threadsafe_containers/queue-threadsafe.hpp"
 // #include "library/Row.hpp"
@@ -187,6 +186,7 @@ void opencv(std::threadsafe::queue<cv::Point> &deque_ball_pos) {
     cam.stopVideo();
     // cv::destroyWindow("Video");
     // cv::destroyWindow("Mask");
+    cv::destroyAllWindows();
     std::cout << "End of opencv" << std::endl;
 }
 
@@ -201,32 +201,33 @@ void fussball_system(std::threadsafe::queue<cv::Point> &deque_ball_pos)
     Small_Stepper_motor small_motor_row0(20, 21, chip, 0);
 
     int theta;
-    cv::Point ball_pos;
+    cv::Point new_ball_pos;
+    cv::Point old_ball_pos;
 
     auto thread_start_time = std::chrono::high_resolution_clock::now();
     while (running)
     {
-        // This needs a lock
-        // mtx.native_handle
-        deque_ball_pos.wait_pop(ball_pos);
-
+        deque_ball_pos.wait_pop(new_ball_pos);
 
         if (ball_pos.x == 0 and ball_pos.y == 0) {
             continue;
         }
 
-        // deque_ball_pos.
+        // std::cout << "x: " << ball_pos.x << " y: " << ball_pos.y << std::endl;
 
-        // theta = atan2(ball_pos.y - CAMERA_HEIGHT/2, ball_pos.x - CAMERA_WIDTH/2) * (180 / PI);
+        // If x is directly infrot of the goal
 
-        // small_motor_row0.go_to_angle(theta);
-
-        std::cout << "x: " << ball_pos.x << " y: " << ball_pos.y << std::endl;
+        old_ball_pos = new_ball_pos;
 
         if ((std::chrono::high_resolution_clock::now() - thread_start_time) > std::chrono::seconds{SECONDS_ACTIVE}) {
             running = false;
         }
     }
+
+    // Release the lines. Is it the opencv or the fussball that dosne't stop completly?
+    big_motor_row0~Big_Stepper_motor();
+    small_motor_row0~Small_Stepper_motor();
+
     std::cout << "End of fussball" << std::endl;
 }
 

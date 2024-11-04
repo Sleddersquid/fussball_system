@@ -5,7 +5,6 @@
 
 #include <gpiod.hpp>
 
-#include "../library/motors.hpp"
 // #include "motors.hpp"
 
 // The big motors has a limit of how many steps it can take
@@ -33,6 +32,7 @@ Big_Stepper_motor::Big_Stepper_motor(int pulse_pin, int dir_pin, gpiod::chip chi
 };
 
 Big_Stepper_motor::~Big_Stepper_motor() {
+        std::cout << this->m_last_coord << std::endl;
         pulse_line.release();
         dir_line.release();
 };
@@ -101,13 +101,43 @@ void Big_Stepper_motor::go_to_angle(int new_angle) {
     this->m_last_angle = new_angle;
 }
 
+void Big_Stepper_motor::go_to_coord(int new_coord) {
+    
+    if(new_coord > m_end_coord) {
+        new_coord = this->m_end_coord;
+    }
+    if (new_coord < m_start_coord) {
+        new_coord = this->m_start_coord;
+    }
+
+    int coord = new_coord - this->m_last_coord;
+    int steps = abs(coord) * steps_per_coord;
+
+    if (coord > 0) {
+        this->dir_line.set_value(1);
+    } else {
+        this->dir_line.set_value(0);
+    }
+
+
+    for (int i = 0; i < steps; i++) {
+        this->pulse_line.set_value(1);
+        usleep(sleep_time); // 100 us
+        this->pulse_line.set_value(0);
+        usleep(sleep_time); // 100 us
+    }
+    
+    this->m_last_coord = new_coord;
+}
+
 int Big_Stepper_motor::get_row() {
     return this->m_row;
 };
 
 
 void Big_Stepper_motor::reset() {
-    this->go_to_angle(0);
+    // this->go_to_angle(0);
+    this->go_to_coord(m_end_coord);
 }
 
 

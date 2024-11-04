@@ -8,6 +8,8 @@
 
 #include <gpiod.hpp>
 
+#include "../include_cpp_file/motors.cpp"
+
 // These classes are used for custom errors
 class MAX_LIMIT_FOR_STEPS_REACHED {};
 
@@ -38,12 +40,18 @@ private:
     float sleep_time = 80; // 90 us
     int steps_taken = 0;
 
+    int steps_per_coord = 10;
+
     // Sets a threshold of 2000 steps
     // This is to contrain the motor to not be able to go over or under the limit of steps
     // max number of steps is between [0, 2000] 
     int max_steps = 2000;
     
     int m_last_angle = 0;
+    int m_last_coord = 0;
+
+    int m_start_coord = 100;
+    int m_end_coord = 300;
 
 public:
     Big_Stepper_motor(int pulse_pin, int dir_pin, gpiod::chip chip, int row);
@@ -63,7 +71,7 @@ public:
 
 
     /**
-     * @brief Operates the motor in steps (0.225 degrees). Is limited to 2000 steps
+     * @brief Operates the motor in steps (0.225 degrees). Is limited to max_steps
      * @param steps - The number of steps the motor should do.
      * @param dir - The direction the motor should go. False (0) is forward, True (1) is backwards
      */
@@ -71,11 +79,17 @@ public:
 
 
     /**
-     * @brief Makes the motor go to a certain angle, given theta (in degrees). Is limited to 2000 steps
+     * @brief Makes the motor go to a certain angle, given theta (in degrees). Is limited to max_steps
      * @param angle - The angle the motor should go to.
      */
     void go_to_angle(int theta);
 
+
+    /**
+     * @brief Makes the motor go to a certain coordinate, given x. Is limited to max_steps
+     * @param x - The coordinate the motor should go to.
+     */
+    void go_to_coord(int new_coord);
 
     /**
      * @brief Returns the row of the motor
