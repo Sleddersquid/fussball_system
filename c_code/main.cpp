@@ -204,12 +204,12 @@ void fussball_system(std::threadsafe::queue<cv::Point> &deque_ball_pos)
 
     int theta;
     cv::Point new_ball_pos;
-    cv::Point old_ball_pos = cv::Point(-10, -10);
+    cv::Point old_ball_pos = cv::Point(-99, -99);
 
 
     auto thread_start_time = std::chrono::high_resolution_clock::now();
     while (running) {
-        // THis is the problem
+        // THis is the problem. The thread is put to sleep and it will just wait here and sleep until eternity (if the opencv thread is not awake)
         deque_ball_pos.wait_pop(new_ball_pos);
 
         // This may not be needed.

@@ -76,7 +76,7 @@ void Big_Stepper_motor::steps_opperate(int steps, bool dir) {
         usleep(sleep_time); // 100 us
     }
     this->dir_line.set_value(0);
-    std::cout << "Steps taken: " << steps_taken << std::endl;
+    // std::cout << "Steps taken: " << steps_taken << std::endl;
 };
 
 void Big_Stepper_motor::go_to_angle(int new_angle) {
@@ -102,6 +102,7 @@ void Big_Stepper_motor::go_to_angle(int new_angle) {
     this->steps_opperate(steps, dir);
 
     this->m_last_angle = new_angle;
+    this->dir_line.set_value(0);
 };
 
 void Big_Stepper_motor::go_to_coord(int new_coord) {
@@ -142,6 +143,7 @@ void Big_Stepper_motor::go_to_coord(int new_coord) {
     }
     
     this->m_last_coord = new_coord;
+    this->dir_line.set_value(0);
 };
 
 int Big_Stepper_motor::get_row() {
@@ -154,13 +156,16 @@ void Big_Stepper_motor::reset() {
     // this->go_to_coord(m_end_coord);
 
 
-    this->dir_line.set_value(0);
+    this->dir_line.set_value(1);
     for (int i = 0; i < this->steps_taken; i++) {
         this->pulse_line.set_value(1);
         usleep(sleep_time); // 100 us
         this->pulse_line.set_value(0);
         usleep(sleep_time); // 100 us
     }
+
+    this->dir_line.set_value(0);
+    this->steps_taken = 0;
 };
 
 
@@ -238,6 +243,7 @@ void Small_Stepper_motor::go_to_angle(int new_angle_deg) {
     // std::cout << "Steps: " << steps << ", dir: " << dir << std::endl;
 
     this->m_last_angle = new_angle_deg;
+    this->dir_line.set_value(0);
 };
 
 int Small_Stepper_motor::get_row() {
