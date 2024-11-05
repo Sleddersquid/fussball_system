@@ -260,7 +260,6 @@ void fussball_system(std::threadsafe::queue<cv::Point> &deque_ball_pos)
 
 // ------------------ MAIN VARIABLES ------------------ //
 
-// std::atomic<std::array<cv::Point, 3>> deque_ball_pos;
 // The mutex is in the threadsafe queue
 std::threadsafe::queue<cv::Point> deque_ball_pos;
 
@@ -279,14 +278,14 @@ int main() {
     catch (const std::exception &e) {
         std::cerr << e.what() << std::endl;
     }
-    std::this_thread::sleep_for(std::chrono::seconds(SECONDS_ACTIVE + 1));
+    // std::this_thread::sleep_for(std::chrono::seconds(SECONDS_ACTIVE + 1));
 
-    // Join the threads
-    std::cout << "Closing thread 1" << std::endl;
+    // Join the threads. Will wait here until it is joinable
     thread1.join();
-    std::cout << "Closing thread 2" << std::endl;
+    std::cout << "Closed thread 1" << std::endl;
     thread2.join();
-    std::cout << "Threads closed" << std::endl;
+    std::cout << "Closed thread 2" << std::endl;
+    // std::cout << "Threads closed" << std::endl;
 
     // There looks like there is no need to close the gpio chip.
     // Only need to release the lines, and that is done in the destructor of the motor class

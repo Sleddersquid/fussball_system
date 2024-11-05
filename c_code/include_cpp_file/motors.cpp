@@ -9,7 +9,6 @@
 
 // The big motors has a limit of how many steps it can take
 
-
 // ------------------------------ BIG MOTOR ------------------------------ //
 
 /**
@@ -17,10 +16,9 @@
  * @param pulse_pin - The pin that the pulse signal is connected to
  * @param dir_pin - The pin that the direction signal is connected to
  * @param chip - The GPIO chip for opening the lines 
- * @param row - The row of the motor
  */
-Big_Stepper_motor::Big_Stepper_motor(int pulse_pin, int dir_pin, gpiod::chip chip, int row)
-    : m_pulse_pin(pulse_pin), m_dir_pin(dir_pin) , m_row(row) {
+Big_Stepper_motor::Big_Stepper_motor(int pulse_pin, int dir_pin, gpiod::chip chip)
+    : m_pulse_pin(pulse_pin), m_dir_pin(dir_pin) {
 
     // Retrieve the line handles
     this->pulse_line = chip.get_line(pulse_pin);
@@ -116,7 +114,7 @@ void Big_Stepper_motor::go_to_coord(int new_coord) {
 
     int coord = new_coord - this->m_last_coord;
     int steps = abs(coord) * steps_per_coord;
-    float smoothing = (this->m_last_coord - this->m_start_coord)/coord;
+    // float smoothing = (this->m_last_coord - this->m_start_coord)/coord;
 
     int dir = 0;
 
@@ -146,11 +144,6 @@ void Big_Stepper_motor::go_to_coord(int new_coord) {
     this->dir_line.set_value(0);
 };
 
-int Big_Stepper_motor::get_row() {
-    return this->m_row;
-};
-
-
 void Big_Stepper_motor::reset() {
     // this->go_to_angle(0);
     // this->go_to_coord(m_end_coord);
@@ -174,8 +167,8 @@ void Big_Stepper_motor::reset() {
 
 // The small motor has no limit of how many steps it can take
 // ------------------------------ SMALL MOTOR ------------------------------ //
-Small_Stepper_motor::Small_Stepper_motor(int pulse_pin, int dir_pin, gpiod::chip chip, int row) 
-    : m_pulse_pin(pulse_pin), m_dir_pin(dir_pin) , m_row(row) {
+Small_Stepper_motor::Small_Stepper_motor(int pulse_pin, int dir_pin, gpiod::chip chip) 
+    : m_pulse_pin(pulse_pin), m_dir_pin(dir_pin) {
     
     // Retrieve the line handles
     this->pulse_line = chip.get_line(pulse_pin);
@@ -245,12 +238,6 @@ void Small_Stepper_motor::go_to_angle(int new_angle_deg) {
     this->m_last_angle = new_angle_deg;
     this->dir_line.set_value(0);
 };
-
-int Small_Stepper_motor::get_row() {
-    return this->m_row;
-};
-
-
 
 void Small_Stepper_motor::reset() {
     this->go_to_angle(0);

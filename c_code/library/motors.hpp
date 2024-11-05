@@ -23,21 +23,18 @@ class MAX_LIMIT_FOR_STEPS_REACHED {};
  * @param pulse_pin - The pin (GPIO) that the pulse signal is connected to
  * @param dir_pin - The pin (GPIO) that the direction signal is connected to
  * @param chip - The GPIO chip for opening the lines 
- * @param row - The row of the motor
  */
 class Big_Stepper_motor {
 private:
     int m_pulse_pin;
     int m_dir_pin;
 
-    int m_row;
-
     gpiod::line pulse_line;
     gpiod::line dir_line;
 
     // Should be 1600. What is this? 1650
     int steps_per_rev = 1600;
-    float sleep_time = 80; // 90 us
+    float sleep_time = 80; // In us (nanoseconds)
     int steps_taken = 0;
 
     float steps_per_coord = 2.05;
@@ -54,7 +51,7 @@ private:
     int m_end_coord = 1217;
 
 public:
-    Big_Stepper_motor(int pulse_pin, int dir_pin, gpiod::chip chip, int row);
+    Big_Stepper_motor(int pulse_pin, int dir_pin, gpiod::chip chip);
 
     /**
      * @brief Releases the pulse and the dir line when destroyed
@@ -92,11 +89,8 @@ public:
     void go_to_coord(int new_coord);
 
     /**
-     * @brief Returns the row of the motor
-     * @return The row of the motor
+     * @brief Resets the motor to the starting position, that being all the way way back. 
      */
-    int get_row();
-
     void reset();
 };
 
@@ -108,27 +102,24 @@ public:
  * @param pulse_pin - The pin (GPIO) that the pulse signal is connected to
  * @param dir_pin - The pin (GPIO) that the direction signal is connected to
  * @param chip - The GPIO chip for opening the lines 
- * @param row - The row of the motor
  */
 class Small_Stepper_motor {
 private:
     int m_pulse_pin;
     int m_dir_pin;
 
-    int m_row;
-
     gpiod::line pulse_line;
     gpiod::line dir_line;
 
     // Should be 1600. What is this? // 1610
     int steps_per_rev = 1600;
-    float sleep_time = 1; // 0.1 us
+    float sleep_time = 1;  // In us (nanoseconds)
     int steps_taken = 0;
 
     int m_last_angle = 0;
 
 public:
-    Small_Stepper_motor(int pulse_pin, int dir_pin, gpiod::chip chip, int row);
+    Small_Stepper_motor(int pulse_pin, int dir_pin, gpiod::chip chip);
 
     ~Small_Stepper_motor();
 
@@ -144,8 +135,6 @@ public:
     void steps_opperate(int steps, bool dir);
 
     void go_to_angle(int new_angle);
-
-    int get_row();
 
     void reset();
 };
