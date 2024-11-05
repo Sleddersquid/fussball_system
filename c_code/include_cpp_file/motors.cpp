@@ -24,6 +24,8 @@ Big_Stepper_motor::Big_Stepper_motor(int pulse_pin, int dir_pin, gpiod::chip chi
     this->pulse_line = chip.get_line(pulse_pin);
     this->dir_line = chip.get_line(dir_pin);
 
+    this->m_last_coord = this->m_start_coord;
+
     // This the string needed to request the line?
     dir_line.request({"example", gpiod::line_request::DIRECTION_OUTPUT, 0});
     pulse_line.request({"example", gpiod::line_request::DIRECTION_OUTPUT, 0});
@@ -34,6 +36,12 @@ Big_Stepper_motor::~Big_Stepper_motor() {
         pulse_line.release();
         dir_line.release();
 };
+
+float Big_Stepper_motor::smoothnging(int new_min, int new_max, int old_min, int old_max, int x) {
+    return new_min + ((x - old_min) / (old_max - old_min)) * (new_max - new_min);
+};
+
+
 
 void Big_Stepper_motor::opperate(int revs, bool dir) {
     // Check if it will go over under the limit. If it does, throw an exception
@@ -113,14 +121,14 @@ void Big_Stepper_motor::go_to_coord(int new_coord) {
     }
 
     int coord = new_coord - this->m_last_coord;
-    int steps = abs(coord) * steps_per_coord;
     // float smoothing = (this->m_last_coord - this->m_start_coord)/coord;
 
     int dir = 0;
-
     if (coord < 0) {
         dir = 1;
     }
+
+    int steps = abs(coord) * steps_per_coord;
 
     if (steps_taken + steps*(dir ? -1 : 1) > max_steps) {
         // throw MAX_LIMIT_FOR_STEPS_REACHED();
@@ -132,12 +140,14 @@ void Big_Stepper_motor::go_to_coord(int new_coord) {
 
     this->dir_line.set_value(dir);
 
+    float smmoo = smoothnging(1, 5, 0, 2100, steps);
+
 
     for (int i = 0; i < steps; i++) {
         this->pulse_line.set_value(1);
-        usleep(sleep_time); // 100 us
+        usleep(sleep_time * smmoo); // 100 us
         this->pulse_line.set_value(0);
-        usleep(sleep_time); // 100 us
+        usleep(sleep_time* smmoo); // 100 us
     }
     
     this->m_last_coord = new_coord;

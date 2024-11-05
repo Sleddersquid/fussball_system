@@ -29,9 +29,9 @@
 // avg FPS at HD is 125 without computhon center, with center computing, 111.111, and at FHD is 48.478 
 #define CAMERA_HEIGHT 720       // Can be SD: 480, HD: 720, FHD: 1080, QHD: 1440
 #define CAMERA_WIDTH 1280       // Can be SD: 640, HD: 1280, FHD: 1920, QHD: 2560
-#define CAMERA_FRAMERATE 60    // If fps higher than what the thread can handle, it will just run lower fps.
+#define CAMERA_FRAMERATE 100    // If fps higher than what the thread can handle, it will just run lower fps.
 
-#define SECONDS_ACTIVE 20
+#define SECONDS_ACTIVE 30
 
 // ------------------------ TODO: ------------------------ //
 // 1 - Make an algorithm that chooses what row and another alogrithm for the players
@@ -175,7 +175,7 @@ void opencv(std::threadsafe::queue<cv::Point> &deque_ball_pos) {
             // cv::imshow("Mask", mask);
 
         }
-        if ((std::chrono::high_resolution_clock::now() - thread_start_time) > std::chrono::seconds{SECONDS_ACTIVE}) {
+        if ((std::chrono::high_resolution_clock::now() - thread_start_time) > std::chrono::seconds{SECONDS_ACTIVE + 2}) {
             running = false;
         }
     }
@@ -193,24 +193,31 @@ void opencv(std::threadsafe::queue<cv::Point> &deque_ball_pos) {
 }
 
 // The multiple params may need to be adjusted
-void fussball_system(std::threadsafe::queue<cv::Point> &deque_ball_pos)
+void fussball_system(std::threadsafe::queue<cv::Point> &deque_ball_pos, Big_Stepper_motor &big_motor_1, Small_Stepper_motor &small_motor_1)
 {
     bool running = true;
-
-    gpiod::chip chip("gpiochip0");
-
-    Big_Stepper_motor big_motor_row0(23, 24, chip, 0);
-    Small_Stepper_motor small_motor_row0(20, 21, chip, 0);
 
     int theta;
     cv::Point new_ball_pos;
     cv::Point old_ball_pos = cv::Point(-99, -99);
 
-
     auto thread_start_time = std::chrono::high_resolution_clock::now();
     while (running) {
         // THis is the problem. The thread is put to sleep and it will just wait here and sleep until eternity (if the opencv thread is not awake)
+        // if (!deque_ball_pos.try_top(new_ball_pos)) {
+        //     std::cout << "No new ball pos" << std::endl;
+        //     big_motor_1.reset();
+        //     small_motor_1.reset();
+        //     continue;
+        // }
+
+        // if (deque_ball_pos.empty()) {
+        //     // std::cout << "No new ball pos" << std::endl;
+        //     continue;
+        // }
+
         deque_ball_pos.wait_pop(new_ball_pos);
+        // deque_ball_pos.try_pop(new_ball_pos);
 
         // This may not be needed.
         if (new_ball_pos.x == 0 && new_ball_pos.y == 0) {
@@ -219,17 +226,24 @@ void fussball_system(std::threadsafe::queue<cv::Point> &deque_ball_pos)
 
         std::cout << "x: " << new_ball_pos.x << " y: " << new_ball_pos.y << std::endl;
 
-        // if(abs(new_ball_pos.x - old_ball_pos.x) < 3) {
-        //     old_ball_pos = new_ball_pos;
-        //     continue;
-        // }
+        // If there isn't a significant enough change in the x value, don't opperate the motor
+        if(abs(new_ball_pos.x - old_ball_pos.x) < 6) {
+            old_ball_pos = new_ball_pos;
+            continue;
+        }
 
         try {
-            // big_motor_row0.go_to_coord(new_ball_pos.x);
-            
+            big_motor_1.go_to_coord(new_ball_pos.x);
+
+            if (new_ball_pos.y > 450) {
+                small_motor_1.go_to_angle(-45);
+            } else {
+                small_motor_1.go_to_angle(0);
+            }
         }
         catch (const std::exception &e) {
             std::cerr << e.what() << std::endl;
+            break;
         }
 
         // std::cout << "x: " << ball_pos.x << " y: " << ball_pos.y << std::endl;
@@ -242,10 +256,6 @@ void fussball_system(std::threadsafe::queue<cv::Point> &deque_ball_pos)
             running = false;
         }
     }
-
-    // Release the lines. Is it the opencv or the fussball that dosne't stop completly?
-    big_motor_row0.reset();
-    small_motor_row0.reset();
 
     std::cout << "End of fussball" << std::endl;
 }
@@ -260,6 +270,12 @@ void fussball_system(std::threadsafe::queue<cv::Point> &deque_ball_pos)
 
 // ------------------ MAIN VARIABLES ------------------ //
 
+
+gpiod::chip chip("gpiochip0");
+
+Big_Stepper_motor big_motor_1(23, 24, chip);
+Small_Stepper_motor small_motor_1(20, 21, chip);
+
 // The mutex is in the threadsafe queue
 std::threadsafe::queue<cv::Point> deque_ball_pos;
 
@@ -272,7 +288,7 @@ int main() {
 
     try {
         thread1 = std::thread(opencv, std::ref(deque_ball_pos));
-        thread2 = std::thread(fussball_system, std::ref(deque_ball_pos));
+        thread2 = std::thread(fussball_system, std::ref(deque_ball_pos), std::ref(big_motor_1), std::ref(small_motor_1));
 
     }
     catch (const std::exception &e) {
@@ -280,9 +296,15 @@ int main() {
     }
     // std::this_thread::sleep_for(std::chrono::seconds(SECONDS_ACTIVE + 1));
 
+
     // Join the threads. Will wait here until it is joinable
     thread1.join();
     std::cout << "Closed thread 1" << std::endl;
+
+    // Release the lines. Is it the opencv or the fussball that dosne't stop completly?
+    big_motor_1.reset();
+    small_motor_1.reset();
+
     thread2.join();
     std::cout << "Closed thread 2" << std::endl;
     // std::cout << "Threads closed" << std::endl;

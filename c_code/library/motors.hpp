@@ -1,6 +1,3 @@
-#ifndef MYCLASSES_HPP  // Include guard to prevent multiple inclusions
-#define MYCLASSES_HPP
-
 
 #include <iostream>
 #include <string>
@@ -37,7 +34,7 @@ private:
     float sleep_time = 80; // In us (nanoseconds)
     int steps_taken = 0;
 
-    float steps_per_coord = 2.05;
+    float steps_per_coord = 2;
 
     // Sets a threshold of 2000 steps
     // This is to contrain the motor to not be able to go over or under the limit of steps
@@ -45,10 +42,12 @@ private:
     int max_steps = 2200;
     
     int m_last_angle = 0;
-    int m_last_coord = 161;
+    int m_last_coord = 0;
 
-    int m_start_coord = 161;
-    int m_end_coord = 1217;
+    int m_start_coord = 111; // 161
+    int m_end_coord = 1145; // 1217
+
+    float smoothnging(int new_min, int new_max, int old_min, int old_max, int x);
 
 public:
     Big_Stepper_motor(int pulse_pin, int dir_pin, gpiod::chip chip);
@@ -138,5 +137,3 @@ public:
 
     void reset();
 };
-
-#endif // MYCLASSES_HPP
