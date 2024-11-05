@@ -8,7 +8,7 @@
 
 #include <gpiod.hpp>
 
-#include "../include_cpp_file/motors.cpp"
+// #include "../include_cpp_file/motors.cpp"
 
 // These classes are used for custom errors
 class MAX_LIMIT_FOR_STEPS_REACHED {};
@@ -40,18 +40,18 @@ private:
     float sleep_time = 80; // 90 us
     int steps_taken = 0;
 
-    int steps_per_coord = 10;
+    float steps_per_coord = 2.05;
 
     // Sets a threshold of 2000 steps
     // This is to contrain the motor to not be able to go over or under the limit of steps
     // max number of steps is between [0, 2000] 
-    int max_steps = 2000;
+    int max_steps = 2200;
     
     int m_last_angle = 0;
-    int m_last_coord = 0;
+    int m_last_coord = 161;
 
-    int m_start_coord = 100;
-    int m_end_coord = 300;
+    int m_start_coord = 161;
+    int m_end_coord = 1217;
 
 public:
     Big_Stepper_motor(int pulse_pin, int dir_pin, gpiod::chip chip, int row);
@@ -122,7 +122,7 @@ private:
 
     // Should be 1600. What is this? // 1610
     int steps_per_rev = 1600;
-    float sleep_time = 600; // 0.1 us
+    float sleep_time = 1; // 0.1 us
     int steps_taken = 0;
 
     int m_last_angle = 0;
@@ -143,7 +143,7 @@ public:
     // Don't think this one is needed. Maybe just do full revoloutions
     void steps_opperate(int steps, bool dir);
 
-    void go_to_angle(int angle);
+    void go_to_angle(int new_angle);
 
     int get_row();
 

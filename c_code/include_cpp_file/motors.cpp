@@ -5,7 +5,7 @@
 
 #include <gpiod.hpp>
 
-// #include "motors.hpp"
+#include "../library/motors.hpp"
 
 // The big motors has a limit of how many steps it can take
 
@@ -53,18 +53,19 @@ void Big_Stepper_motor::opperate(int revs, bool dir) {
         this->pulse_line.set_value(0);
         usleep(sleep_time); // 100 us
     }
+    this->dir_line.set_value(0);
 };
 
 
 void Big_Stepper_motor::steps_opperate(int steps, bool dir) {
     // Check if it will go over under the limit, if it does, throw an exception
-    // if (steps_taken + steps > max_steps || steps_taken - steps < 0) {
-    //     throw MAX_LIMIT_FOR_STEPS_REACHED();
-    // }
+    if (steps_taken + steps*(dir ? -1 : 1) > max_steps) {
+        throw MAX_LIMIT_FOR_STEPS_REACHED();
+    }
 
+    steps_taken = steps_taken + steps * (dir ? -1 : 1);
     // Since forwards is 0 and backwards 1, we need to add or subtract the steps, depending on the direction
     // Should instead use -1**dir, but since it uses a function, i found this more convinient
-    steps_taken = steps_taken + steps * (dir ? -1 : 1);
     // Set the direction
     this->dir_line.set_value(dir);
     // Pulse for the motor stepper
@@ -74,6 +75,8 @@ void Big_Stepper_motor::steps_opperate(int steps, bool dir) {
         this->pulse_line.set_value(0);
         usleep(sleep_time); // 100 us
     }
+    this->dir_line.set_value(0);
+    std::cout << "Steps taken: " << steps_taken << std::endl;
 };
 
 void Big_Stepper_motor::go_to_angle(int new_angle) {
@@ -99,7 +102,7 @@ void Big_Stepper_motor::go_to_angle(int new_angle) {
     this->steps_opperate(steps, dir);
 
     this->m_last_angle = new_angle;
-}
+};
 
 void Big_Stepper_motor::go_to_coord(int new_coord) {
     
@@ -112,12 +115,23 @@ void Big_Stepper_motor::go_to_coord(int new_coord) {
 
     int coord = new_coord - this->m_last_coord;
     int steps = abs(coord) * steps_per_coord;
+    float smoothing = (this->m_last_coord - this->m_start_coord)/coord;
 
-    if (coord > 0) {
-        this->dir_line.set_value(1);
-    } else {
-        this->dir_line.set_value(0);
+    int dir = 0;
+
+    if (coord < 0) {
+        dir = 1;
     }
+
+    if (steps_taken + steps*(dir ? -1 : 1) > max_steps) {
+        // throw MAX_LIMIT_FOR_STEPS_REACHED();
+        std::cout << "Max limit reached" << std::endl;
+        return;
+    }
+
+    this->steps_taken = this->steps_taken + steps * (dir ? -1 : 1);
+
+    this->dir_line.set_value(dir);
 
 
     for (int i = 0; i < steps; i++) {
@@ -128,7 +142,7 @@ void Big_Stepper_motor::go_to_coord(int new_coord) {
     }
     
     this->m_last_coord = new_coord;
-}
+};
 
 int Big_Stepper_motor::get_row() {
     return this->m_row;
@@ -137,8 +151,17 @@ int Big_Stepper_motor::get_row() {
 
 void Big_Stepper_motor::reset() {
     // this->go_to_angle(0);
-    this->go_to_coord(m_end_coord);
-}
+    // this->go_to_coord(m_end_coord);
+
+
+    this->dir_line.set_value(0);
+    for (int i = 0; i < this->steps_taken; i++) {
+        this->pulse_line.set_value(1);
+        usleep(sleep_time); // 100 us
+        this->pulse_line.set_value(0);
+        usleep(sleep_time); // 100 us
+    }
+};
 
 
 
@@ -169,10 +192,11 @@ void Small_Stepper_motor::opperate(int revs, bool dir) {
     // Pulse the motor
     for (int i = 0; i < revs*(this->steps_per_rev); i++) {
         this->pulse_line.set_value(1);
-        usleep(sleep_time); // 100 us
+        usleep(sleep_time);
         this->pulse_line.set_value(0);
-        usleep(sleep_time); // 100 us
+        usleep(sleep_time);
     }
+    this->dir_line.set_value(0);
 };
 
 void Small_Stepper_motor::steps_opperate(int steps, bool dir) {
@@ -181,10 +205,12 @@ void Small_Stepper_motor::steps_opperate(int steps, bool dir) {
     // Pulse the motor
     for (int i = 0; i < steps; i++) {
         this->pulse_line.set_value(1);
-        usleep(sleep_time); // 100 us
+        usleep(sleep_time);
         this->pulse_line.set_value(0);
-        usleep(sleep_time); // 100 us
+        usleep(sleep_time);
+        // std::cout << "Step: " << i << std::endl;
     }
+    this->dir_line.set_value(0);
 };
 
 void Small_Stepper_motor::go_to_angle(int new_angle_deg) {
@@ -212,7 +238,7 @@ void Small_Stepper_motor::go_to_angle(int new_angle_deg) {
     // std::cout << "Steps: " << steps << ", dir: " << dir << std::endl;
 
     this->m_last_angle = new_angle_deg;
-}
+};
 
 int Small_Stepper_motor::get_row() {
     return this->m_row;
@@ -222,6 +248,4 @@ int Small_Stepper_motor::get_row() {
 
 void Small_Stepper_motor::reset() {
     this->go_to_angle(0);
-}
-
-
+};

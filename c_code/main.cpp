@@ -16,7 +16,8 @@
 #include <lccv.hpp>
 
 // For the motors and the deque
-#include "library/motors.hpp"
+#include "include_cpp_file/motors.cpp"
+// #include "library/motors.hpp"
 // #include "library/deque_extra.hpp"
 #include "library/threadsafe_containers/queue-threadsafe.hpp"
 // #include "library/Row.hpp"
@@ -28,9 +29,9 @@
 // avg FPS at HD is 125 without computhon center, with center computing, 111.111, and at FHD is 48.478 
 #define CAMERA_HEIGHT 720       // Can be SD: 480, HD: 720, FHD: 1080, QHD: 1440
 #define CAMERA_WIDTH 1280       // Can be SD: 640, HD: 1280, FHD: 1920, QHD: 2560
-#define CAMERA_FRAMERATE 101    // If fps higher than what the thread can handle, it will just run lower fps.
+#define CAMERA_FRAMERATE 60    // If fps higher than what the thread can handle, it will just run lower fps.
 
-#define SECONDS_ACTIVE 2
+#define SECONDS_ACTIVE 20
 
 // ------------------------ TODO: ------------------------ //
 // 1 - Make an algorithm that chooses what row and another alogrithm for the players
@@ -102,7 +103,7 @@ void opencv(std::threadsafe::queue<cv::Point> &deque_ball_pos) {
     cv::Mat image, mask, HSV;
     lccv::PiCamera cam;
 
-    cv::Scalar hsv_l(0, 120, 120);
+    cv::Scalar hsv_l(0, 70, 70);
     cv::Scalar hsv_h(10, 255, 255);
 
     cam.options->video_width = CAMERA_WIDTH;
@@ -126,8 +127,8 @@ void opencv(std::threadsafe::queue<cv::Point> &deque_ball_pos) {
 
             cv::inRange(HSV, hsv_l, hsv_h, mask);
 
-            cv::erode(mask, mask, cv::Mat(), cv::Point(-1, -1), 1);
-            cv::dilate(mask, mask, cv::Mat(), cv::Point(-1, -1), 1);
+            cv::erode(mask, mask, cv::Mat(), cv::Point(-1, -1), 3);
+            cv::dilate(mask, mask, cv::Mat(), cv::Point(-1, -1), 3);
 
             // Find contours in the mask
             std::vector<std::vector<cv::Point>> contours;
@@ -159,15 +160,15 @@ void opencv(std::threadsafe::queue<cv::Point> &deque_ball_pos) {
 
             deque_ball_pos.push(center);
 
-            framesNumber++;
+            // framesNumber++;
 
             // ----------------- For drawing the path of the ball ----------------- //
             // for (size_t i = 1; i < deque_ball_pos.size(); ++i) {
-            //     if (deque_ball_pos[i - 1] == cv::Point(0, 0) || deque_ball_pos[i] == cv::Point(0, 0)) {
+            //     if (old_ball_pos == cv::Point(0, 0) && new_ball_pos == cv::Point(0, 0)) {
             //         continue;
             //     }
             //     int thickness = static_cast<int>(sqrt(32.0 / (i + 1)) * 2.5);
-            //     cv::line(image, deque_ball_pos[i - 1], deque_ball_pos[i], cv::Scalar(0, 0, 255), thickness);
+            //     cv::line(image, old_ball_pos, new_ball_pos, cv::Scalar(0, 0, 255), thickness);
             // }
 
             // cv::imshow("Video", image);
@@ -179,14 +180,15 @@ void opencv(std::threadsafe::queue<cv::Point> &deque_ball_pos) {
         }
     }
 
-    totalTime = getTimestamp();
-    float avgFPS = (totalTime -startTime)/ 1000 / framesNumber;
-    std::cout << "Average FPS: " << (1000 / avgFPS) << std::endl;
+    // totalTime = getTimestamp();
+    // float avgFPS = (totalTime -startTime)/ 1000 / framesNumber;
+    // std::cout << "Average FPS: " << (1000 / avgFPS) << std::endl;
     
     cam.stopVideo();
     // cv::destroyWindow("Video");
     // cv::destroyWindow("Mask");
     cv::destroyAllWindows();
+    deque_ball_pos.push(cv::Point(0, 0)); // Send a dummy value to stop the fussball thread
     std::cout << "End of opencv" << std::endl;
 }
 
@@ -202,20 +204,37 @@ void fussball_system(std::threadsafe::queue<cv::Point> &deque_ball_pos)
 
     int theta;
     cv::Point new_ball_pos;
-    cv::Point old_ball_pos;
+    cv::Point old_ball_pos = cv::Point(-10, -10);
+
 
     auto thread_start_time = std::chrono::high_resolution_clock::now();
-    while (running)
-    {
+    while (running) {
+        // THis is the problem
         deque_ball_pos.wait_pop(new_ball_pos);
 
-        if (ball_pos.x == 0 and ball_pos.y == 0) {
+        // This may not be needed.
+        if (new_ball_pos.x == 0 && new_ball_pos.y == 0) {
             continue;
+        }
+
+        std::cout << "x: " << new_ball_pos.x << " y: " << new_ball_pos.y << std::endl;
+
+        // if(abs(new_ball_pos.x - old_ball_pos.x) < 3) {
+        //     old_ball_pos = new_ball_pos;
+        //     continue;
+        // }
+
+        try {
+            // big_motor_row0.go_to_coord(new_ball_pos.x);
+            
+        }
+        catch (const std::exception &e) {
+            std::cerr << e.what() << std::endl;
         }
 
         // std::cout << "x: " << ball_pos.x << " y: " << ball_pos.y << std::endl;
 
-        // If x is directly infrot of the goal
+        // If is directly infrot of the goal, x = x
 
         old_ball_pos = new_ball_pos;
 
@@ -225,8 +244,8 @@ void fussball_system(std::threadsafe::queue<cv::Point> &deque_ball_pos)
     }
 
     // Release the lines. Is it the opencv or the fussball that dosne't stop completly?
-    big_motor_row0~Big_Stepper_motor();
-    small_motor_row0~Small_Stepper_motor();
+    big_motor_row0.reset();
+    small_motor_row0.reset();
 
     std::cout << "End of fussball" << std::endl;
 }
@@ -246,17 +265,15 @@ void fussball_system(std::threadsafe::queue<cv::Point> &deque_ball_pos)
 std::threadsafe::queue<cv::Point> deque_ball_pos;
 
 // Create the threads
-// std::thread thread1;
-// std::thread thread2;
+std::thread thread1;
+std::thread thread2;
 
-int a = 0;
 // ------------------ MAIN FUNCTION ------------------ //
-int main()
-{
+int main() {
 
     try {
-        std::thread thread1 = std::thread(opencv, std::ref(deque_ball_pos));
-        std::thread thread2 = std::thread(fussball_system, std::ref(deque_ball_pos));
+        thread1 = std::thread(opencv, std::ref(deque_ball_pos));
+        thread2 = std::thread(fussball_system, std::ref(deque_ball_pos));
 
     }
     catch (const std::exception &e) {
@@ -265,8 +282,9 @@ int main()
     std::this_thread::sleep_for(std::chrono::seconds(SECONDS_ACTIVE + 1));
 
     // Join the threads
-    std::cout << "Closing the threads" << std::endl;
+    std::cout << "Closing thread 1" << std::endl;
     thread1.join();
+    std::cout << "Closing thread 2" << std::endl;
     thread2.join();
     std::cout << "Threads closed" << std::endl;
 

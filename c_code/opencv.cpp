@@ -2,6 +2,11 @@
 #include <lccv.hpp>
 // #include "lccv.hpp"
 
+// avg FPS at HD is 125 without computhon center, with center computing, 111.111, and at FHD is 48.478 
+#define CAMERA_HEIGHT 720       // Can be SD: 480, HD: 720, FHD: 1080, QHD: 1440
+#define CAMERA_WIDTH 1280       // Can be SD: 640, HD: 1280, FHD: 1920, QHD: 2560
+#define CAMERA_FRAMERATE 101 
+
 int main()
 {
     std::cout<<"Sample program for LCCV video capture"<<std::endl;
@@ -9,9 +14,9 @@ int main()
     cv::Mat image;
     lccv::PiCamera cam;
 
-    cam.options->video_width=640;
-    cam.options->video_height=480;
-    cam.options->framerate=100;
+    cam.options->video_width=CAMERA_WIDTH;
+    cam.options->video_height=CAMERA_HEIGHT;
+    cam.options->framerate=CAMERA_FRAMERATE;
     cam.options->verbose=true;
 
     cv::namedWindow("Video",cv::WINDOW_NORMAL);
@@ -25,6 +30,7 @@ int main()
         else{
             cv::imshow("Video",image);
             ch=cv::waitKey(10);
+
         }
     }
     cam.stopVideo();
