@@ -9,7 +9,7 @@
 #include <thread>
 
 // For the Motors, Rows and The deque
-#include "include_cpp_file/motors.cpp"
+#include "library/motors.hpp"
 
 gpiod::chip chip("gpiochip0");
 
@@ -31,8 +31,6 @@ int revs = 1;
 float f(int x) {
     return 1/x;
 }
-
-
 
 int main() {
 

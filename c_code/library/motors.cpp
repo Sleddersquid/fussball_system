@@ -5,7 +5,7 @@
 
 #include <gpiod.hpp>
 
-#include "../library/motors.hpp"
+#include "motors.hpp"
 
 // The big motors has a limit of how many steps it can take
 
@@ -32,7 +32,7 @@ Big_Stepper_motor::Big_Stepper_motor(int pulse_pin, int dir_pin, gpiod::chip chi
 };
 
 Big_Stepper_motor::~Big_Stepper_motor() {
-        std::cout << this->m_last_coord << std::endl;
+        // std::cout << this->m_last_coord << std::endl;
         pulse_line.release();
         dir_line.release();
 };
@@ -69,7 +69,7 @@ void Big_Stepper_motor::steps_opperate(int steps, bool dir) {
         throw MAX_LIMIT_FOR_STEPS_REACHED();
     }
 
-    steps_taken = steps_taken + steps * (dir ? -1 : 1);
+    steps_taken = steps_taken + steps * (dir ? 1 : -1);
     // Since forwards is 0 and backwards 1, we need to add or subtract the steps, depending on the direction
     // Should instead use -1**dir, but since it uses a function, i found this more convinient
     // Set the direction
@@ -112,6 +112,7 @@ void Big_Stepper_motor::go_to_angle(int new_angle) {
 };
 
 void Big_Stepper_motor::go_to_coord(int new_coord) {
+    // Add jitter to the motor (10 steps?)
     
     if(new_coord > m_end_coord) {
         new_coord = this->m_end_coord;
@@ -123,31 +124,36 @@ void Big_Stepper_motor::go_to_coord(int new_coord) {
     int coord = new_coord - this->m_last_coord;
     // float smoothing = (this->m_last_coord - this->m_start_coord)/coord;
 
+    // If coord positive, dir = 1
     int dir = 0;
-    if (coord < 0) {
+    if (coord > 0) {
         dir = 1;
     }
 
     int steps = abs(coord) * steps_per_coord;
 
-    if (steps_taken + steps*(dir ? -1 : 1) > max_steps) {
-        // throw MAX_LIMIT_FOR_STEPS_REACHED();
-        std::cout << "Max limit reached" << std::endl;
-        return;
-    }
+    // if coord less than 10, dont opperate motor. 
+    // if (steps < 19) {
+    //     return; 
+    // }
+
+    // if (steps_taken + steps*(dir ? -1 : 1) > max_steps) {
+    //     // throw MAX_LIMIT_FOR_STEPS_REACHED();
+    //     std::cout << "Max limit reached" << std::endl;
+    //     this->reset();
+    // }
 
     this->steps_taken = this->steps_taken + steps * (dir ? -1 : 1);
 
     this->dir_line.set_value(dir);
 
-    float smmoo = smoothnging(1, 5, 0, 2100, steps);
-
+    // float smmoo = smoothnging(1, 5, 0, 2100, steps);
 
     for (int i = 0; i < steps; i++) {
         this->pulse_line.set_value(1);
-        usleep(sleep_time * smmoo); // 100 us
+        usleep(sleep_time); // 100 us
         this->pulse_line.set_value(0);
-        usleep(sleep_time* smmoo); // 100 us
+        usleep(sleep_time); // 100 us
     }
     
     this->m_last_coord = new_coord;
@@ -155,23 +161,21 @@ void Big_Stepper_motor::go_to_coord(int new_coord) {
 };
 
 void Big_Stepper_motor::reset() {
+    // std::cout << "Steps taken: " << this->steps_taken << std::endl;
     // this->go_to_angle(0);
     // this->go_to_coord(m_end_coord);
 
-
-    this->dir_line.set_value(1);
-    for (int i = 0; i < this->steps_taken; i++) {
+    this->dir_line.set_value(0);
+    for (int i = 0; i < abs(this->steps_taken); i++) {
         this->pulse_line.set_value(1);
         usleep(sleep_time); // 100 us
         this->pulse_line.set_value(0);
         usleep(sleep_time); // 100 us
     }
 
-    this->dir_line.set_value(0);
+    // this->dir_line.set_value(0);
     this->steps_taken = 0;
 };
-
-
 
 
 

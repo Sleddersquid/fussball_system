@@ -4,34 +4,32 @@
 #include <vector>
 #include <tgmath.h>
 
-// For the threads and such
+// For the threads
 #include <thread>
-#include <mutex>
+// #include <mutex>
 #include <condition_variable>
 #include <chrono>
 
-// For GPIO and OpenCV
+// For GPIO, OpenCV and lccv (enables opencv to use the picamera v3)
 #include <gpiod.hpp>
 #include <opencv2/opencv.hpp>
 #include <lccv.hpp>
 
-// For the motors and the deque
-#include "include_cpp_file/motors.cpp"
+// For the motors and the threadsafe deque
+#include "library/motors.cpp"
 // #include "library/motors.hpp"
-// #include "library/deque_extra.hpp"
 #include "library/threadsafe_containers/queue-threadsafe.hpp"
-// #include "library/Row.hpp"
 
 #define PI 3.14159265
 
-#define MAX_LEN_DEQUE 32
+// #define MAX_LEN_DEQUE 32
 
-// avg FPS at HD is 125 without computhon center, with center computing, 111.111, and at FHD is 48.478 
+// avg FPS at HD is 125 without computation of center, with center computing, 111.111, and at FHD is 48.478 
 #define CAMERA_HEIGHT 720       // Can be SD: 480, HD: 720, FHD: 1080, QHD: 1440
 #define CAMERA_WIDTH 1280       // Can be SD: 640, HD: 1280, FHD: 1920, QHD: 2560
 #define CAMERA_FRAMERATE 100    // If fps higher than what the thread can handle, it will just run lower fps.
 
-#define SECONDS_ACTIVE 30
+#define SECONDS_ACTIVE 100
 
 // ------------------------ TODO: ------------------------ //
 // 1 - Make an algorithm that chooses what row and another alogrithm for the players
@@ -93,9 +91,9 @@ long long getTimestamp()
 void opencv(std::threadsafe::queue<cv::Point> &deque_ball_pos) {
     bool running = true;
 
-    int framesNumber = 0;
-    long long startTime = getTimestamp();
-    long long totalTime = 0;
+    // int framesNumber = 0;
+    // long long startTime = getTimestamp();
+    // long long totalTime = 0;
 
     std::cout << "Sample program for LCCV video capture" << std::endl;
     std::cout << "Press ESC to stop. (Does not work if no window is displayed)" << std::endl;
@@ -103,8 +101,8 @@ void opencv(std::threadsafe::queue<cv::Point> &deque_ball_pos) {
     cv::Mat image, mask, HSV;
     lccv::PiCamera cam;
 
-    cv::Scalar hsv_l(0, 70, 70);
-    cv::Scalar hsv_h(10, 255, 255);
+    cv::Scalar hsv_lower(0, 120, 120);
+    cv::Scalar hsv_upper(10, 255, 255);
 
     cam.options->video_width = CAMERA_WIDTH;
     cam.options->video_height = CAMERA_HEIGHT;
@@ -115,7 +113,6 @@ void opencv(std::threadsafe::queue<cv::Point> &deque_ball_pos) {
     // cv::namedWindow("Video", cv::WINDOW_NORMAL);
     // cv::namedWindow("Mask", cv::WINDOW_NORMAL);
     cam.startVideo();
-    int ch = 0;
 
     auto thread_start_time = std::chrono::high_resolution_clock::now();
     while (running) {
@@ -125,7 +122,7 @@ void opencv(std::threadsafe::queue<cv::Point> &deque_ball_pos) {
         else {
             cv::cvtColor(image, HSV, cv::COLOR_BGR2HSV);
 
-            cv::inRange(HSV, hsv_l, hsv_h, mask);
+            cv::inRange(HSV, hsv_lower, hsv_upper, mask);
 
             cv::erode(mask, mask, cv::Mat(), cv::Point(-1, -1), 3);
             cv::dilate(mask, mask, cv::Mat(), cv::Point(-1, -1), 3);
@@ -142,10 +139,10 @@ void opencv(std::threadsafe::queue<cv::Point> &deque_ball_pos) {
                     return cv::contourArea(a) < cv::contourArea(b);
                 });
 
-                // Compute the minimum enclosing circle and center
-                float radius;
-                cv::Point2f enclosingCenter;
-                cv::minEnclosingCircle(largestContour, enclosingCenter, radius);
+                // // Compute the minimum enclosing circle and center
+                // float radius;
+                // cv::Point2f enclosingCenter;
+                // cv::minEnclosingCircle(largestContour, enclosingCenter, radius);
 
                 // Calculate the centroid (center of mass)
                 center = calculateCenter(largestContour);
@@ -201,6 +198,8 @@ void fussball_system(std::threadsafe::queue<cv::Point> &deque_ball_pos, Big_Step
     cv::Point new_ball_pos;
     cv::Point old_ball_pos = cv::Point(-99, -99);
 
+    int direction = 0;
+
     auto thread_start_time = std::chrono::high_resolution_clock::now();
     while (running) {
         // THis is the problem. The thread is put to sleep and it will just wait here and sleep until eternity (if the opencv thread is not awake)
@@ -216,7 +215,7 @@ void fussball_system(std::threadsafe::queue<cv::Point> &deque_ball_pos, Big_Step
         //     continue;
         // }
 
-        deque_ball_pos.wait_pop(new_ball_pos);
+        deque_ball_pos.try_pop(new_ball_pos);
         // deque_ball_pos.try_pop(new_ball_pos);
 
         // This may not be needed.
@@ -224,33 +223,37 @@ void fussball_system(std::threadsafe::queue<cv::Point> &deque_ball_pos, Big_Step
             continue;
         }
 
-        std::cout << "x: " << new_ball_pos.x << " y: " << new_ball_pos.y << std::endl;
+        // std::cout << "x: " << new_ball_pos.x << " y: " << new_ball_pos.y << std::endl;
 
         // If there isn't a significant enough change in the x value, don't opperate the motor
-        if(abs(new_ball_pos.x - old_ball_pos.x) < 6) {
+        if(abs(new_ball_pos.x - old_ball_pos.x) < 3 || (new_ball_pos.y < 375)) {
+            big_motor_1.steps_opperate(50, direction);
+
             old_ball_pos = new_ball_pos;
             continue;
         }
 
-        try {
-            big_motor_1.go_to_coord(new_ball_pos.x);
+        // try {
+            // big_motor_1.go_to_coord(new_ball_pos.x);
 
-            if (new_ball_pos.y > 450) {
-                small_motor_1.go_to_angle(-45);
-            } else {
-                small_motor_1.go_to_angle(0);
-            }
-        }
-        catch (const std::exception &e) {
-            std::cerr << e.what() << std::endl;
-            break;
-        }
+            // if (new_ball_pos.y > 450) {
+            //     small_motor_1.go_to_angle(-45);
+            // } else {
+            //     small_motor_1.go_to_angle(0);
+            // }
+        // }
+        // catch (const std::exception &e) {
+        //     std::cerr << e.what() << std::endl;
+        //     break;
+        // }
 
-        // std::cout << "x: " << ball_pos.x << " y: " << ball_pos.y << std::endl;
+        std::cout << "x: " << new_ball_pos.x << " y: " << new_ball_pos.y << std::endl;
 
         // If is directly infrot of the goal, x = x
 
         old_ball_pos = new_ball_pos;
+
+        direction = !direction;
 
         if ((std::chrono::high_resolution_clock::now() - thread_start_time) > std::chrono::seconds{SECONDS_ACTIVE}) {
             running = false;
@@ -273,6 +276,7 @@ void fussball_system(std::threadsafe::queue<cv::Point> &deque_ball_pos, Big_Step
 
 gpiod::chip chip("gpiochip0");
 
+// Created in this scope so the 
 Big_Stepper_motor big_motor_1(23, 24, chip);
 Small_Stepper_motor small_motor_1(20, 21, chip);
 
@@ -297,7 +301,7 @@ int main() {
     // std::this_thread::sleep_for(std::chrono::seconds(SECONDS_ACTIVE + 1));
 
 
-    // Join the threads. Will wait here until it is joinable
+    // Join the threads. Will wait here until it is joinable (wait_pop of the deque is hindering this )
     thread1.join();
     std::cout << "Closed thread 1" << std::endl;
 

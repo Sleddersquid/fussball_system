@@ -1,11 +1,10 @@
+#pragma once
 
 #include <iostream>
 #include <string>
 #include <unistd.h>
 
 #include <gpiod.hpp>
-
-// #include "../include_cpp_file/motors.cpp"
 
 // These classes are used for custom errors
 class MAX_LIMIT_FOR_STEPS_REACHED {};
@@ -34,18 +33,18 @@ private:
     float sleep_time = 80; // In us (nanoseconds)
     int steps_taken = 0;
 
-    float steps_per_coord = 2;
+    float steps_per_coord = 6;
 
     // Sets a threshold of 2000 steps
     // This is to contrain the motor to not be able to go over or under the limit of steps
-    // max number of steps is between [0, 2000] 
-    int max_steps = 2200;
+    // max number of steps is between [0, 2100] 
+    int max_steps = 2100;
     
     int m_last_angle = 0;
     int m_last_coord = 0;
 
-    int m_start_coord = 111; // 161
-    int m_end_coord = 1145; // 1217
+    int m_start_coord = 432; // 161
+    int m_end_coord = 797; // 1217
 
     float smoothnging(int new_min, int new_max, int old_min, int old_max, int x);
 
