@@ -108,7 +108,7 @@ void opencv(std::threadsafe::queue<cv::Point> &deque_ball_pos) {
     cam.options->video_height = CAMERA_HEIGHT;
     cam.options->framerate = CAMERA_FRAMERATE;
     cam.options->verbose = true;
-    cam.options->list_cameras = true;
+    // cam.options->list_cameras = true;
 
     // cv::namedWindow("Video", cv::WINDOW_NORMAL);
     // cv::namedWindow("Mask", cv::WINDOW_NORMAL);
@@ -227,7 +227,7 @@ void fussball_system(std::threadsafe::queue<cv::Point> &deque_ball_pos, Big_Step
 
         // If there isn't a significant enough change in the x value, don't opperate the motor
         if(abs(new_ball_pos.x - old_ball_pos.x) < 3 || (new_ball_pos.y < 375)) {
-            big_motor_1.steps_opperate(50, direction);
+            // big_motor_1.steps_opperate(50, direction); // Not yet tested
 
             old_ball_pos = new_ball_pos;
             continue;
