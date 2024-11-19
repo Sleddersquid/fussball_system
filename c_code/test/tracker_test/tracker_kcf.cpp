@@ -1,5 +1,6 @@
 #include <opencv2/opencv.hpp>
 #include <lccv.hpp>
+#include <iostream>
 
 
 #define CAMERA_HEIGHT 720       // Can be SD: 480, HD: 720, FHD: 1080, QHD: 1440
@@ -7,15 +8,12 @@
 #define CAMERA_FRAMERATE 1000 // heheh    // If fps higher than what the thread can handle, it will just run lower fps.
 
 
-cv:Rect roi;
-cv::Mat image
-
-Ptr<Tracker> tracker = TrackerKCF::create();
-
-
-
 
 int main(int argc, char** argv) {
+    cv::Rect roi;
+    cv::Mat image;
+
+    cv::Ptr<cv::Tracker> tracker = TrackerKCF::create();
     lccv::PiCamera cam;
 
     cam.options->video_width = CAMERA_WIDTH;
