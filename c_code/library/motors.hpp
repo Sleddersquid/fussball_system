@@ -30,21 +30,21 @@ private:
 
     // Should be 1600. What is this? 1650
     int steps_per_rev = 1600;
-    float sleep_time = 80; // In us (nanoseconds)
+    float sleep_time = 73; // In us (nanoseconds)
     int steps_taken = 0;
 
-    float steps_per_coord = 6;
+    float steps_per_coord = 7;
 
     // Sets a threshold of 2000 steps
     // This is to contrain the motor to not be able to go over or under the limit of steps
     // max number of steps is between [0, 2100] 
-    int max_steps = 2100;
+    int max_steps = 290;
     
     int m_last_angle = 0;
     int m_last_coord = 0;
 
-    int m_start_coord = 432; // 161
-    int m_end_coord = 797; // 1217
+    int m_start_coord = 424 - 10; // 161, 440
+    int m_end_coord = 777 - 10; // 1217, 800
 
     float smoothnging(int new_min, int new_max, int old_min, int old_max, int x);
 

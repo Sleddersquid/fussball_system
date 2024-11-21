@@ -125,17 +125,12 @@ void Big_Stepper_motor::go_to_coord(int new_coord) {
     // float smoothing = (this->m_last_coord - this->m_start_coord)/coord;
 
     // If coord positive, dir = 1
-    int dir = 0;
+    int dir = 1;
     if (coord > 0) {
-        dir = 1;
+        dir = 0;
     }
 
     int steps = abs(coord) * steps_per_coord;
-
-    // if coord less than 10, dont opperate motor. 
-    // if (steps < 19) {
-    //     return; 
-    // }
 
     // if (steps_taken + steps*(dir ? -1 : 1) > max_steps) {
     //     // throw MAX_LIMIT_FOR_STEPS_REACHED();
@@ -165,7 +160,7 @@ void Big_Stepper_motor::reset() {
     // this->go_to_angle(0);
     // this->go_to_coord(m_end_coord);
 
-    this->dir_line.set_value(0);
+    this->dir_line.set_value(1);
     for (int i = 0; i < abs(this->steps_taken); i++) {
         this->pulse_line.set_value(1);
         usleep(sleep_time); // 100 us
@@ -173,7 +168,7 @@ void Big_Stepper_motor::reset() {
         usleep(sleep_time); // 100 us
     }
 
-    // this->dir_line.set_value(0);
+    this->dir_line.set_value(0);
     this->steps_taken = 0;
 };
 
