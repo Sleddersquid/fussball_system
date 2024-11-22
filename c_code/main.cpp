@@ -29,7 +29,7 @@
 #define CAMERA_WIDTH 1280    // Can be SD: 640, HD: 1280, FHD: 1920, QHD: 2560
 #define CAMERA_FRAMERATE 200 // If fps higher than what the thread can handle, it will just run lower fps.
 
-#define SECONDS_ACTIVE 3000
+#define SECONDS_ACTIVE 10
 
 // ------------------------ TODO: ------------------------ //
 // ------------------ GLOBAL VARIABLES ------------------ //
@@ -84,13 +84,21 @@ long long getTimestamp()
     return epoch.count();
 }
 
-cv::Point simplePredict(cv::Point &old_ball_pos, cv::Point &new_ball_pos) {
-    if (old_ball_pos == cv::Point(-99, -99)) {
-        return;
+cv::Point simplePredict(cv::Point old_ball_pos, cv::Point new_ball_pos) {
+    return cv::Point(new_ball_pos.x + (new_ball_pos.x - old_ball_pos.x), new_ball_pos.y + (new_ball_pos.y - old_ball_pos.y));
+}
+
+cv::Point intersect_determinant(cv::Point p1, cv::Point p2, cv::Point p3, cv::Point p4) {
+    // Handle if the lower determnant is zero
+    float det = ((p1.x - p2.x)*(p3.y - p4.y) - (p1.y - p2.y)*(p3.x - p4.x));
+    if (det == 0) {
+        return cv::Point(0, 0);
     }
-    new_ball_pos = cv::Point(new_ball_pos.x + (new_ball_pos.x - old_ball_pos.x), new_ball_pos.y);
-    return new_ball_pos;
-} 
+    // See https://en.wikipedia.org/wiki/Line–line_intersection for formula
+    float px = ((p1.x*p2.y - p1.y*p2.x)*(p3.x - p4.x) - (p1.x - p2.x)*(p3.x*p4.y - p3.y*p4.x))/det;
+    float py = ((p1.x*p2.y - p1.y*p2.x)*(p3.y - p4.y) - (p1.y - p2.y)*(p3.x*p4.y - p3.y*p4.x))/det;
+    return cv::Point(px, py);
+}
 
 
 
@@ -103,7 +111,6 @@ void opencv(std::threadsafe::queue<cv::Point> &deque_ball_pos)
     // long long startTime = getTimestamp();
     // long long totalTime = 0;
 
-    std::cout << "Sample program for LCCV video capture" << std::endl;
     std::cout << "Press ESC to stop. (Does not work if no window is displayed)" << std::endl;
 
     cv::Mat image, mask, HSV;
@@ -128,6 +135,8 @@ void opencv(std::threadsafe::queue<cv::Point> &deque_ball_pos)
 
     cv::Point new_center(0, 0);
     cv::Point old_center(0, 0);
+
+    // cv::Point temp_pos(0, 0);
 
     auto thread_start_time = std::chrono::high_resolution_clock::now();
     while (running)
@@ -159,22 +168,23 @@ void opencv(std::threadsafe::queue<cv::Point> &deque_ball_pos)
                 new_center = calculateCenter(largestContour);
             }
 
-
-            // Only send instruction if the motors needs to be moved.
             if (new_center.x == 0 && new_center.y == 0) {
+                // if no ball found
                 continue;
             }
 
-            if (abs(new_center.x - old_center.x) < 2) { // && (new_ball_pos.y < 200)
+            if (abs(new_center.x - old_center.x) < 3 && abs(new_center.y - old_center.y) < 3) {
                 old_center = new_center;
                 continue;
             }
+            // Only send instruction if the motors needs to be moved.
+            // std::cout << "Old: " << "x: " << old_center.x << " y: " << old_center.y << std::endl;
+            std::cout << "New: " << "x: " << new_center.x << " y: " << new_center.y << std::endl;
+
+            // simplePredict(old_center, new_center);
+            // temp_pos = simplePredict(old_center, new_center);
 
             deque_ball_pos.push(new_center);
-
-
-
-
 
             
             old_center = new_center;
@@ -222,11 +232,10 @@ void fussball_system(std::threadsafe::queue<cv::Point> &deque_ball_pos, Big_Step
         // deque_ball_pos.try_pop(new_ball_pos);
         deque_ball_pos.wait_pop(ball_pos);
 
-        // std::cout << "x: " << new_ball_pos.x << " y: " << new_ball_pos.y << std::endl;
+        // std::cout << "x: " << ball_pos.x << " y: " << ball_pos.y << std::endl;
 
         // If there isn't a significant enough change in the x value, don't opperate the motor
 
-        // try {
         big_motor_1.go_to_coord(ball_pos.x);
 
         // if (new_ball_pos.y > 450) {
@@ -235,15 +244,11 @@ void fussball_system(std::threadsafe::queue<cv::Point> &deque_ball_pos, Big_Step
         //     small_motor_1.go_to_angle(0);
         // }
         // }
-        // catch (const std::exception &e) {
-        //     std::cerr << e.what() << std::endl;
-        //     break;
-        // }
 
         // std::cout << "x: " << old_ball_pos.x << " y: " << old_ball_pos.y << std::endl;
 
         // If is directly infrot of the goal, x = x
-        
+
         // direction = !direction;
 
         if ((std::chrono::high_resolution_clock::now() - thread_start_time) > std::chrono::seconds{SECONDS_ACTIVE})
