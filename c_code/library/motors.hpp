@@ -44,7 +44,7 @@ private:
     int m_last_coord = 0;
 
     int m_start_coord = 455; // 161, 440, Works with 424
-    int m_end_coord = 830; // 1217, 800, Works with 777
+    int m_end_coord = 813; // 1217, 800, Works with 777
 
     float smoothnging(int new_min, int new_max, int old_min, int old_max, int x);
 

@@ -99,9 +99,9 @@ int main() {
             // cv::circle(image, new_center, 5, cv::Scalar(0, 255, 0), -1);
 
             // cv::putText(image, "Center", new_center, cv::FONT_HERSHEY_SIMPLEX, 0.5, cv::Scalar(255, 0, 0), 2);
-            cv::imshow("Video", image);
+            // cv::imshow("Video", image);
 
-            cv::imshow("Mask", mask);
+            // cv::imshow("Mask", mask);
 
 
             // cv::moveWindow("Video", 0, 0);
@@ -110,9 +110,9 @@ int main() {
             //quit on ESC button
             // if(cv::waitKey(1)==27) break;
 
-            // if (new_center.x == 0 && new_center.y == 0) {
-            //     continue;
-            // }
+            if (new_center.x == 0 && new_center.y == 0) {
+                continue;
+            }
 
             if (abs(new_center.x - old_center.x) < 4 && abs(new_center.y - old_center.y) < 4) {
                 old_center = new_center;

@@ -29,7 +29,7 @@
 #define CAMERA_WIDTH 1280    // Can be SD: 640, HD: 1280, FHD: 1920, QHD: 2560
 #define CAMERA_FRAMERATE 200 // If fps higher than what the thread can handle, it will just run lower fps.
 
-#define SECONDS_ACTIVE 10
+#define SECONDS_ACTIVE 100
 
 // ------------------------ TODO: ------------------------ //
 // ------------------ GLOBAL VARIABLES ------------------ //
@@ -96,8 +96,8 @@ cv::Point intersect_determinant(cv::Point p1, cv::Point p2, cv::Point p3, cv::Po
     }
     // See https://en.wikipedia.org/wiki/Line–line_intersection for formula
     float px = ((p1.x*p2.y - p1.y*p2.x)*(p3.x - p4.x) - (p1.x - p2.x)*(p3.x*p4.y - p3.y*p4.x))/det;
-    float py = ((p1.x*p2.y - p1.y*p2.x)*(p3.y - p4.y) - (p1.y - p2.y)*(p3.x*p4.y - p3.y*p4.x))/det;
-    return cv::Point(px, py);
+    // float py = ((p1.x*p2.y - p1.y*p2.x)*(p3.y - p4.y) - (p1.y - p2.y)*(p3.x*p4.y - p3.y*p4.x))/det;
+    return cv::Point(px, 0);
 }
 
 // --------------- Func for the threads --------------- //
@@ -114,7 +114,7 @@ void opencv(std::threadsafe::queue<cv::Point> &deque_ball_pos)
     cv::Mat image, mask, HSV;
     lccv::PiCamera cam;
 
-    cv::Scalar hsv_lower(0, 120, 120);
+    cv::Scalar hsv_lower(0, 70, 70);
     cv::Scalar hsv_upper(10, 255, 255);
 
     cam.options->video_width = CAMERA_WIDTH;
@@ -168,40 +168,17 @@ void opencv(std::threadsafe::queue<cv::Point> &deque_ball_pos)
             }
 
             if (new_center.x == 0 && new_center.y == 0) {
-                // if no ball found
-                continue;
+            // if no ball found
+            continue;
             }
-
-            if (abs(new_center.x - old_center.x) < 4 && abs(new_center.y - old_center.y) < 4) {
-                old_center = new_center;
-                continue;
-            }
-
-            std::cout << "Old: " << "x: " << old_center.x << " y: " << old_center.y << std::endl;
-            std::cout << "New: " << "x: " << new_center.x << " y: " << new_center.y << std::endl;
-
-            if (old_center.y - new_center.y  < 0) { // If the ball is moving towards the table 
-                ball_intersect = intersect_determinant(cv::Point(85, 760), cv::Point(1167, 709), old_center, new_center);
-            } else { // If it is moving away from the table
-                ball_intersect = cv::Point(642, 733); // intersect in the middle, x: 642, y: 733
-            }
-
-            // Only add intersect point if it is going into the goal
-            if (ball_intersect.x > 455 || ball_intersect.x < 830) {
-                deque_ball_pos.push(ball_intersect);
-            }
-
-
-            // temp_pos = simplePredict(old_center, new_center);
-
-            // deque_ball_pos.push(new_center);
-
             
-            old_center = new_center;
-        }
-        if ((std::chrono::high_resolution_clock::now() - thread_start_time) > std::chrono::seconds{SECONDS_ACTIVE + 1})
-        {
-            running = false;
+            // std::cout << "Pushing to deque" << std::endl;
+            deque_ball_pos.push(new_center);
+
+            if ((std::chrono::high_resolution_clock::now() - thread_start_time) > std::chrono::seconds{SECONDS_ACTIVE + 1})
+            {
+                running = false;
+            }
         }
     }
 
@@ -219,7 +196,10 @@ void fussball_system(std::threadsafe::queue<cv::Point> &deque_ball_pos, Big_Step
     bool running = true;
 
     int theta;
-    cv::Point intersect_point;
+    cv::Point old_ball(0, 0);
+    cv::Point new_ball(0, 0);
+
+    cv::Point intersect_point(0, 0);
 
     std::thread thread3;
 
@@ -240,11 +220,37 @@ void fussball_system(std::threadsafe::queue<cv::Point> &deque_ball_pos, Big_Step
         // }
 
         // deque_ball_pos.try_pop(new_ball_pos);
-        deque_ball_pos.wait_pop(intersect_point);
+        deque_ball_pos.wait_pop(new_ball);
 
+        if (abs(new_ball.x - old_ball.x) < 2 || abs(new_ball.y - old_ball.y) < 2) {
+            old_ball = new_ball;
+            continue;   
+        }
 
-        std::cout << "Ball pos: " << "x: " << intersect_point.x << " y: " << intersect_point.y << std::endl;
-        // big_motor_1.go_to_coord(ball_pos.x);
+        // std::cout << "Old: " << "x: " << old_ball.x << " y: " << old_ball.y << std::endl;
+        // std::cout << "New: " << "x: " << new_ball.x << " y: " << new_ball.y << std::endl;
+
+        if (old_ball.y - new_ball.y < 0) { // If the ball is moving towards the table 
+            intersect_point = intersect_determinant(cv::Point(85, 758), cv::Point(1167, 709), old_ball, new_ball);
+        } else { // If it is moving away from the table
+            intersect_point = cv::Point(642, 0); // intersect in the middle, x: 642, y: 733
+        }
+
+        // Only add intersect point if it is going into the goal
+        if (intersect_point.x > 400 && intersect_point.x < 900) { // 455, 813
+            std::cout << "Moving motor" << std::endl;
+            std::cout << "Intersect: " << "x: " << intersect_point.x << " y: " << intersect_point.y << std::endl;
+            // deque_ball_pos.push(intersect_point);
+            big_motor_1.go_to_coord(intersect_point.x);
+        } else {
+            std::cout << "Not moving motor" << std::endl;
+        }
+
+        // temp_pos = simplePredict(old_ball, new_center);
+
+        // deque_ball_pos.push(new_center);
+
+        // std::cout << "Intersect: " << "x: " << intersect_point.x << " y: " << intersect_point.y << std::endl;
 
         // if (new_ball_pos.y > 450) {
         //     small_motor_1.go_to_angle(-45);
@@ -258,6 +264,7 @@ void fussball_system(std::threadsafe::queue<cv::Point> &deque_ball_pos, Big_Step
         // If is directly infrot of the goal, x = x
 
         // direction = !direction;
+        old_ball = new_ball;
 
         if ((std::chrono::high_resolution_clock::now() - thread_start_time) > std::chrono::seconds{SECONDS_ACTIVE})
         {
