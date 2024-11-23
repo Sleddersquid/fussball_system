@@ -237,14 +237,14 @@ void fussball_system(std::threadsafe::queue<cv::Point> &deque_ball_pos, Big_Step
         }
 
         // Only add intersect point if it is going into the goal
-        if (intersect_point.x > 400 && intersect_point.x < 900) { // 455, 813
+        // if (intersect_point.x > 400 && intersect_point.x < 900) { // 455, 813
             std::cout << "Moving motor" << std::endl;
             std::cout << "Intersect: " << "x: " << intersect_point.x << " y: " << intersect_point.y << std::endl;
             // deque_ball_pos.push(intersect_point);
-            big_motor_1.go_to_coord(intersect_point.x);
-        } else {
-            std::cout << "Not moving motor" << std::endl;
-        }
+            big_motor_1.go_to_coord(new_ball.x);
+        // } else {
+            // std::cout << "Not moving motor" << std::endl;
+        // }
 
         // temp_pos = simplePredict(old_ball, new_center);
 
