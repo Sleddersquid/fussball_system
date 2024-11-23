@@ -134,7 +134,8 @@ void opencv(std::threadsafe::queue<cv::Point> &deque_ball_pos)
     cv::Point new_center(0, 0);
     cv::Point old_center(0, 0);
 
-    // cv::Point temp_pos(0, 0);
+    cv::Point ball_intersect(0, 0);
+    cv::Point predictball_pos(0, 0);
 
     auto thread_start_time = std::chrono::high_resolution_clock::now();
     while (running)
@@ -179,9 +180,9 @@ void opencv(std::threadsafe::queue<cv::Point> &deque_ball_pos)
             std::cout << "Old: " << "x: " << old_center.x << " y: " << old_center.y << std::endl;
             std::cout << "New: " << "x: " << new_center.x << " y: " << new_center.y << std::endl;
 
-            if (old_center.y - new_center.y  < 0) { // If the ball is moving away from the table, 
+            if (old_center.y - new_center.y  < 0) { // If the ball is moving towards the table 
                 ball_intersect = intersect_determinant(cv::Point(85, 760), cv::Point(1167, 709), old_center, new_center);
-            } else {
+            } else { // If it is moving away from the table
                 ball_intersect = cv::Point(642, 733); // intersect in the middle, x: 642, y: 733
             }
 
@@ -193,7 +194,7 @@ void opencv(std::threadsafe::queue<cv::Point> &deque_ball_pos)
 
             // temp_pos = simplePredict(old_center, new_center);
 
-            deque_ball_pos.push(new_center);
+            // deque_ball_pos.push(new_center);
 
             
             old_center = new_center;
@@ -218,7 +219,7 @@ void fussball_system(std::threadsafe::queue<cv::Point> &deque_ball_pos, Big_Step
     bool running = true;
 
     int theta;
-    cv::Point ball_pos;
+    cv::Point intersect_point;
 
     std::thread thread3;
 
@@ -239,13 +240,11 @@ void fussball_system(std::threadsafe::queue<cv::Point> &deque_ball_pos, Big_Step
         // }
 
         // deque_ball_pos.try_pop(new_ball_pos);
-        deque_ball_pos.wait_pop(ball_pos);
+        deque_ball_pos.wait_pop(intersect_point);
 
-        // std::cout << "x: " << ball_pos.x << " y: " << ball_pos.y << std::endl;
 
-        // If there isn't a significant enough change in the x value, don't opperate the motor
-
-        big_motor_1.go_to_coord(ball_pos.x);
+        std::cout << "Ball pos: " << "x: " << intersect_point.x << " y: " << intersect_point.y << std::endl;
+        // big_motor_1.go_to_coord(ball_pos.x);
 
         // if (new_ball_pos.y > 450) {
         //     small_motor_1.go_to_angle(-45);
