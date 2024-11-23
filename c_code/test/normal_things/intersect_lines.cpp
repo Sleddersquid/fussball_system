@@ -12,7 +12,6 @@ cv::Point intersect_determinant(cv::Point p1, cv::Point p2, cv::Point p3, cv::Po
     return cv::Point(px, py);
 }
 
-
 int main() {
     cv::Point p1(0, 10);
     cv::Point p2(100, 30);

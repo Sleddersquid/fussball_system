@@ -100,8 +100,6 @@ cv::Point intersect_determinant(cv::Point p1, cv::Point p2, cv::Point p3, cv::Po
     return cv::Point(px, py);
 }
 
-
-
 // --------------- Func for the threads --------------- //
 void opencv(std::threadsafe::queue<cv::Point> &deque_ball_pos)
 {
@@ -173,15 +171,26 @@ void opencv(std::threadsafe::queue<cv::Point> &deque_ball_pos)
                 continue;
             }
 
-            if (abs(new_center.x - old_center.x) < 3 && abs(new_center.y - old_center.y) < 3) {
+            if (abs(new_center.x - old_center.x) < 4 && abs(new_center.y - old_center.y) < 4) {
                 old_center = new_center;
                 continue;
             }
-            // Only send instruction if the motors needs to be moved.
-            // std::cout << "Old: " << "x: " << old_center.x << " y: " << old_center.y << std::endl;
+
+            std::cout << "Old: " << "x: " << old_center.x << " y: " << old_center.y << std::endl;
             std::cout << "New: " << "x: " << new_center.x << " y: " << new_center.y << std::endl;
 
-            // simplePredict(old_center, new_center);
+            if (old_center.y - new_center.y  < 0) { // If the ball is moving away from the table, 
+                ball_intersect = intersect_determinant(cv::Point(85, 760), cv::Point(1167, 709), old_center, new_center);
+            } else {
+                ball_intersect = cv::Point(642, 733); // intersect in the middle, x: 642, y: 733
+            }
+
+            // Only add intersect point if it is going into the goal
+            if (ball_intersect.x > 455 || ball_intersect.x < 830) {
+                deque_ball_pos.push(ball_intersect);
+            }
+
+
             // temp_pos = simplePredict(old_center, new_center);
 
             deque_ball_pos.push(new_center);

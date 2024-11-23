@@ -29,13 +29,13 @@ cv::Point calculateCenter(const std::vector<cv::Point> &contour)
 cv::Point intersect_determinant(cv::Point p1, cv::Point p2, cv::Point p3, cv::Point p4) {
     // Handle if the lower determnant is zero
     float det = ((p1.x - p2.x)*(p3.y - p4.y) - (p1.y - p2.y)*(p3.x - p4.x));
-    if (det == 0) {
-        return cv::Point(-1, -1);
+    if (det == 0) { // if determinant is zero, these lines are parallel
+        return cv::Point(-1, -1); // The lines are parallele
     }
     // See https://en.wikipedia.org/wiki/Line–line_intersection for formula
     float px = ((p1.x*p2.y - p1.y*p2.x)*(p3.x - p4.x) - (p1.x - p2.x)*(p3.x*p4.y - p3.y*p4.x))/det;
     float py = ((p1.x*p2.y - p1.y*p2.x)*(p3.y - p4.y) - (p1.y - p2.y)*(p3.x*p4.y - p3.y*p4.x))/det;
-    return cv::Point(px, py);
+    return cv::Point(px, py); // Not necessary to return the y value, but it is there for debugging purposes
 }
 
 
@@ -58,14 +58,13 @@ int main() {
     cv::namedWindow("Video", cv::WINDOW_FULLSCREEN);
     cv::namedWindow("Mask", cv::WINDOW_FULLSCREEN);
 
-
-
     cam.startVideo();
 
     cv::Point new_center(0, 0);
     cv::Point old_center(0, 0);
 
     cv::Point ball_intersect(0, 0);
+    cv::Point predictball_pos(0, 0);
 
     // cv::Point temp_pos(0, 0);
 
@@ -112,7 +111,6 @@ int main() {
             // if(cv::waitKey(1)==27) break;
 
             // if (new_center.x == 0 && new_center.y == 0) {
-            //     // if no ball found
             //     continue;
             // }
 
@@ -124,21 +122,18 @@ int main() {
             std::cout << "Old: " << "x: " << old_center.x << " y: " << old_center.y << std::endl;
             std::cout << "New: " << "x: " << new_center.x << " y: " << new_center.y << std::endl;
 
-            if (old_center.y - new_center.y  < 0) {
+            if (old_center.y - new_center.y  < 0) { // If the ball is moving away from the table, 
                 ball_intersect = intersect_determinant(cv::Point(85, 760), cv::Point(1167, 709), old_center, new_center);
             } else {
-                ball_intersect = cv::Point(0, 0);
+                ball_intersect = cv::Point(642, 733); // intersect in the middle, x: 642, y: 733
             }
 
+            // Only add intersect point if it is going into the goal
             if (ball_intersect.x > 455 || ball_intersect.x < 830) {
                 // deque_ball_pos.push(ball_intersect);
             }
 
             std::cout << "Intersect: " << "x: " << ball_intersect.x << " y: " << ball_intersect.y << std::endl;
-
-            // simplePredict(old_center, new_center);
-            // temp_pos = simplePredict(old_center, new_center);
-
 
             // show image with the tracked object
             if (cv::waitKey(1) == 'q') {
