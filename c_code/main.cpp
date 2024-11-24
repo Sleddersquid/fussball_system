@@ -114,8 +114,9 @@ void opencv(std::threadsafe::queue<cv::Point> &deque_ball_pos)
     cv::Mat image, mask, HSV;
     lccv::PiCamera cam;
 
+    // Could be changed to (0, 150, 50) and (15, 255, 255), but might detect skin color (No bueno)
     cv::Scalar hsv_lower(0, 70, 70);
-    cv::Scalar hsv_upper(10, 255, 255);
+    cv::Scalar hsv_upper(10, 255, 255); 
 
     cam.options->video_width = CAMERA_WIDTH;
     cam.options->video_height = CAMERA_HEIGHT;
@@ -126,10 +127,6 @@ void opencv(std::threadsafe::queue<cv::Point> &deque_ball_pos)
     // cv::namedWindow("Video", cv::WINDOW_NORMAL);
     // cv::namedWindow("Mask", cv::WINDOW_NORMAL);
     cam.startVideo();
-
-    // int framesNumber = 0;
-    // long long startTime = getTimestamp();
-    // long long totalTime = 0;
 
     cv::Point new_center(0, 0);
     cv::Point old_center(0, 0);
@@ -168,8 +165,8 @@ void opencv(std::threadsafe::queue<cv::Point> &deque_ball_pos)
             }
 
             if (new_center.x == 0 && new_center.y == 0) {
-            // if no ball found
-            continue;
+                // if no ball found
+                continue;
             }
             
             // std::cout << "Pushing to deque" << std::endl;
@@ -195,7 +192,7 @@ void fussball_system(std::threadsafe::queue<cv::Point> &deque_ball_pos, Big_Step
 {
     bool running = true;
 
-    int theta;
+    // int theta;
     cv::Point old_ball(0, 0);
     cv::Point new_ball(0, 0);
 
@@ -230,9 +227,9 @@ void fussball_system(std::threadsafe::queue<cv::Point> &deque_ball_pos, Big_Step
         // std::cout << "Old: " << "x: " << old_ball.x << " y: " << old_ball.y << std::endl;
         // std::cout << "New: " << "x: " << new_ball.x << " y: " << new_ball.y << std::endl;
 
-        if (old_ball.y - new_ball.y < 0) { // If the ball is moving towards the table 
+        if (old_ball.y - new_ball.y < 0) { // If the ball is moving towards the goal
             intersect_point = intersect_determinant(cv::Point(85, 758), cv::Point(1167, 709), old_ball, new_ball);
-        } else { // If it is moving away from the table
+        } else { // If it is moving away from the goal
             intersect_point = cv::Point(642, 0); // intersect in the middle, x: 642, y: 733
         }
 

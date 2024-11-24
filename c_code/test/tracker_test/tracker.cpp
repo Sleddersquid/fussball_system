@@ -36,15 +36,13 @@ int main(int argc, char** argv) {
 
     cam.getVideoFrame(image,  1000);
 
-    bbox=cv::selectROI("tracker", image);
-
-    std::cout << "selected ROI" << std::endl;
+    bbox = cv::selectROI("tracker", image);
 
     std::cout << "bbox width: " << bbox.width << ", bbox heigth: " << bbox.height << std::endl;
 
-    if(bbox.width==0 || bbox.height==0) {
-        sleep(1);
+    if(bbox.width == 0 || bbox.height == 0) {
         std::cout << "No ROI selected" << std::endl;
+        sleep(1);
         cam.stopVideo();
         return 0;
     }
@@ -62,7 +60,7 @@ int main(int argc, char** argv) {
         }
         else {
             // stop the program if no more images
-            if(image.rows==0 || image.cols==0)
+            if(image.rows == 0 || image.cols == 0)
                 break;
 
             double timer = (double)cv::getTickCount();
