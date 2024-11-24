@@ -26,6 +26,10 @@ cv::Point calculateCenter(const std::vector<cv::Point> &contour)
     return cv::Point(0, 0); // Return a dummy value if contour area is zero
 }
 
+cv::Point simplePredict(cv::Point old_ball_pos, cv::Point new_ball_pos) {
+    return cv::Point(new_ball_pos.x + 5*(new_ball_pos.x - old_ball_pos.x), new_ball_pos.y + 5*(new_ball_pos.y - old_ball_pos.y));
+}
+
 cv::Point intersect_determinant(cv::Point p1, cv::Point p2, cv::Point p3, cv::Point p4) {
     // Handle if the lower determnant is zero
     float det = ((p1.x - p2.x)*(p3.y - p4.y) - (p1.y - p2.y)*(p3.x - p4.x));
@@ -64,6 +68,7 @@ int main() {
     cv::Point old_center(0, 0);
 
     cv::Point ball_intersect(0, 0);
+    cv::Point predictball_pos(0, 0);
 
     // cv::Point temp_pos(0, 0);
 
@@ -105,20 +110,22 @@ int main() {
                 continue;
             }
 
-            if (abs(new_center.x - old_center.x) < 4 && abs(new_center.y - old_center.y) < 4) {
+            if (abs(new_center.x - old_center.x) < 2 && abs(new_center.y - old_center.y) < 2) {
                 old_center = new_center;
                 continue;
             }
 
+            predictball_pos = simplePredict(old_center, new_center);
+
 
             if (old_center.y - new_center.y  < 0) { // If the ball is moving towards the goal
-                ball_intersect = intersect_determinant(cv::Point(85, 760), cv::Point(1167, 709), old_center, new_center);
-            } else { // If the ball is moving away from the goal
-                ball_intersect = cv::Point(642, 733); // intersect in the middle, x: 642, y: 733
+                ball_intersect = intersect_determinant(cv::Point(85, 760), cv::Point(1167, 709), old_center, predictball_pos);
+            } else {
+                ball_intersect = cv::Point(0, 0); // Reset?
             }
 
             // Only add intersect point if it is going into the goal
-            if (ball_intersect.x > 455 || ball_intersect.x < 830) {
+            if (ball_intersect.x > 455 && ball_intersect.x < 830) {
                 // deque_ball_pos.push(ball_intersect);
                 std::cout << "Intersect: " << "x: " << ball_intersect.x << " y: " << ball_intersect.y << std::endl;
                 cv::line(image, ball_intersect, new_center, cv::Scalar(0, 0, 255), 20);
@@ -134,7 +141,7 @@ int main() {
             if (cv::waitKey(1) == 'q') {
                 break;
             }
-            
+
             old_center = new_center;
         }
         if ((std::chrono::high_resolution_clock::now() - thread_start_time) > std::chrono::seconds{SECONDS_ACTIVE + 1}) {

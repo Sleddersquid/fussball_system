@@ -29,7 +29,7 @@
 #define CAMERA_WIDTH 1280    // Can be SD: 640, HD: 1280, FHD: 1920, QHD: 2560
 #define CAMERA_FRAMERATE 200 // If fps higher than what the thread can handle, it will just run lower fps.
 
-#define SECONDS_ACTIVE 100
+#define SECONDS_ACTIVE 360
 
 // ------------------------ TODO: ------------------------ //
 // ------------------ GLOBAL VARIABLES ------------------ //
@@ -84,8 +84,8 @@ long long getTimestamp()
     return epoch.count();
 }
 
-cv::Point simplePredict(cv::Point old_ball_pos, cv::Point new_ball_pos) {
-    return cv::Point(new_ball_pos.x + (new_ball_pos.x - old_ball_pos.x), new_ball_pos.y + (new_ball_pos.y - old_ball_pos.y));
+cv::Point simplePredict(cv::Point old_ball_pos, cv::Point new_ball_pos, int magnitude = 5) {
+    return cv::Point(new_ball_pos.x + magnitude*(new_ball_pos.x - old_ball_pos.x), new_ball_pos.y + magnitude*(new_ball_pos.y - old_ball_pos.y));
 }
 
 cv::Point intersect_determinant(cv::Point p1, cv::Point p2, cv::Point p3, cv::Point p4) {
@@ -96,8 +96,8 @@ cv::Point intersect_determinant(cv::Point p1, cv::Point p2, cv::Point p3, cv::Po
     }
     // See https://en.wikipedia.org/wiki/Line–line_intersection for formula
     float px = ((p1.x*p2.y - p1.y*p2.x)*(p3.x - p4.x) - (p1.x - p2.x)*(p3.x*p4.y - p3.y*p4.x))/det;
-    // float py = ((p1.x*p2.y - p1.y*p2.x)*(p3.y - p4.y) - (p1.y - p2.y)*(p3.x*p4.y - p3.y*p4.x))/det;
-    return cv::Point(px, 0);
+    float py = ((p1.x*p2.y - p1.y*p2.x)*(p3.y - p4.y) - (p1.y - p2.y)*(p3.x*p4.y - p3.y*p4.x))/det;
+    return cv::Point(px, py);
 }
 
 // --------------- Func for the threads --------------- //
@@ -115,8 +115,8 @@ void opencv(std::threadsafe::queue<cv::Point> &deque_ball_pos)
     lccv::PiCamera cam;
 
     // Could be changed to (0, 150, 50) and (15, 255, 255), but might detect skin color (No bueno)
-    cv::Scalar hsv_lower(0, 70, 70);
-    cv::Scalar hsv_upper(10, 255, 255); 
+    cv::Scalar hsv_lower(0, 150, 50);
+    cv::Scalar hsv_upper(15, 255, 255); 
 
     cam.options->video_width = CAMERA_WIDTH;
     cam.options->video_height = CAMERA_HEIGHT;
@@ -154,7 +154,6 @@ void opencv(std::threadsafe::queue<cv::Point> &deque_ball_pos)
             std::vector<std::vector<cv::Point>> contours;
             cv::findContours(mask.clone(), contours, cv::RETR_EXTERNAL, cv::CHAIN_APPROX_SIMPLE);
 
-
             if (!contours.empty()) {
                 // Find the largest contour
                 std::vector<cv::Point> largestContour = *std::max_element(contours.begin(), contours.end(), 
@@ -165,15 +164,43 @@ void opencv(std::threadsafe::queue<cv::Point> &deque_ball_pos)
             }
 
             if (new_center.x == 0 && new_center.y == 0) {
-                // if no ball found
                 continue;
             }
-            
-            // std::cout << "Pushing to deque" << std::endl;
-            deque_ball_pos.push(new_center);
 
-            if ((std::chrono::high_resolution_clock::now() - thread_start_time) > std::chrono::seconds{SECONDS_ACTIVE + 1})
-            {
+            if (abs(new_center.x - old_center.x) < 2 && abs(new_center.y - old_center.y) < 2) {
+                old_center = new_center;
+                continue;
+            }
+
+            predictball_pos = simplePredict(old_center, new_center);
+
+            if (old_center.y - new_center.y < 0) { // If the ball is moving towards the goal
+                ball_intersect = intersect_determinant(cv::Point(85, 760), cv::Point(1167, 709), old_center, predictball_pos);
+            } else {
+                ball_intersect = cv::Point(0, 0); // Reset?
+            }
+
+            // Only add intersect point if it is going into the goal
+            if (ball_intersect.x > 455 && ball_intersect.x < 830) {
+                deque_ball_pos.push(ball_intersect);
+                // std::cout << "Intersect: " << "x: " << ball_intersect.x << " y: " << ball_intersect.y << std::endl;
+                cv::line(image, ball_intersect, new_center, cv::Scalar(0, 0, 255), 20);
+            } else {
+                // std::cout << "No ball intersection" << std::endl;
+            }
+
+            cv::imshow("Video", image);
+            cv::imshow("Mask", mask);
+
+            // show image with the tracked object
+            // quit on q button
+            if (cv::waitKey(1) == 'q') {
+                break;
+            }
+
+            old_center = new_center;
+
+            if ((std::chrono::high_resolution_clock::now() - thread_start_time) > std::chrono::seconds{SECONDS_ACTIVE + 1}) {
                 running = false;
             }
         }
@@ -193,75 +220,25 @@ void fussball_system(std::threadsafe::queue<cv::Point> &deque_ball_pos, Big_Step
     bool running = true;
 
     // int theta;
-    cv::Point old_ball(0, 0);
-    cv::Point new_ball(0, 0);
+    cv::Point old_intersect(0, 0);
+    // cv::Point new_ball(0, 0);
 
     cv::Point intersect_point(0, 0);
-
-    std::thread thread3;
 
     int direction = 0;
 
     auto thread_start_time = std::chrono::high_resolution_clock::now();
     while (running) {
-        // if (!deque_ball_pos.try_top(new_ball_pos)) {
-        //     std::cout << "No new ball pos" << std::endl;
-        //     big_motor_1.reset();
-        //     small_motor_1.reset();
-        //     continue;
-        // }
-
-        // if (deque_ball_pos.empty()) {
-        //     // std::cout << "No new ball pos" << std::endl;
-        //     continue;
-        // }
 
         // deque_ball_pos.try_pop(new_ball_pos);
-        deque_ball_pos.wait_pop(new_ball);
+        deque_ball_pos.wait_pop(intersect_point);
+        std::cout << "Intersect: " << "x: " << intersect_point.x << " y: " << intersect_point.y << std::endl;
 
-        if (abs(new_ball.x - old_ball.x) < 2 || abs(new_ball.y - old_ball.y) < 2) {
-            old_ball = new_ball;
-            continue;   
+        if (abs(old_intersect.x - intersect_point.x > 20) {
+            big_motor_1.go_to_coord(intersect_point.x);
         }
 
-        // std::cout << "Old: " << "x: " << old_ball.x << " y: " << old_ball.y << std::endl;
-        // std::cout << "New: " << "x: " << new_ball.x << " y: " << new_ball.y << std::endl;
-
-        if (old_ball.y - new_ball.y < 0) { // If the ball is moving towards the goal
-            intersect_point = intersect_determinant(cv::Point(85, 758), cv::Point(1167, 709), old_ball, new_ball);
-        } else { // If it is moving away from the goal
-            intersect_point = cv::Point(642, 0); // intersect in the middle, x: 642, y: 733
-        }
-
-        // Only add intersect point if it is going into the goal
-        // if (intersect_point.x > 400 && intersect_point.x < 900) { // 455, 813
-            std::cout << "Moving motor" << std::endl;
-            std::cout << "Intersect: " << "x: " << intersect_point.x << " y: " << intersect_point.y << std::endl;
-            // deque_ball_pos.push(intersect_point);
-            big_motor_1.go_to_coord(new_ball.x);
-        // } else {
-            // std::cout << "Not moving motor" << std::endl;
-        // }
-
-        // temp_pos = simplePredict(old_ball, new_center);
-
-        // deque_ball_pos.push(new_center);
-
-        // std::cout << "Intersect: " << "x: " << intersect_point.x << " y: " << intersect_point.y << std::endl;
-
-        // if (new_ball_pos.y > 450) {
-        //     small_motor_1.go_to_angle(-45);
-        // } else {
-        //     small_motor_1.go_to_angle(0);
-        // }
-        // }
-
-        // std::cout << "x: " << old_ball_pos.x << " y: " << old_ball_pos.y << std::endl;
-
-        // If is directly infrot of the goal, x = x
-
-        // direction = !direction;
-        old_ball = new_ball;
+        old_intersect = intersect_point;
 
         if ((std::chrono::high_resolution_clock::now() - thread_start_time) > std::chrono::seconds{SECONDS_ACTIVE})
         {
