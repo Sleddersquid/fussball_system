@@ -1,6 +1,6 @@
 # For imports for classes. So this is a libray file 
-# import RPi.GPIO as gpio # Denne virker ikke med Rasspery pi 5
-import lgpio as lgpio
+# import RPi.GPIO as gpio # This does not work with the raspberry pi 5, it is for the raspberry pi 4
+import lgpio as lgpio # Works for the raspberry pi 5
 from time import sleep
 
 # Opening gpiochip 0. See gpioinfo in terminal
@@ -26,25 +26,25 @@ class Big_Stepper_Motor():
     # This function takes in the number of revolutions and the direction to turn the motor
     # clockwise is 0, counter clockwise is 1. Could be changed to a boolean.
     def opperate(self, revs: int, dir: int) -> None:
-        # Setting the direction for the motor to stepin
+        # Setting the direction for the motor to step in
         self.steps_taken = self.steps_taken + revs*self.steps_per_rev*((-1)**dir)
         lgpio.gpio_write(chip, self.dir_pin, dir)
-        for _ in range(revs*self.steps_per_rev): # To acheive PMW
-            lgpio.gpio_write(chip, self.pulse_pin, 1) # Setter pulse to HIGH 
+        for _ in range(revs*self.steps_per_rev):
+            lgpio.gpio_write(chip, self.pulse_pin, 1) # Setting pulse to HIGH 
             sleep(self.wait_time) # Wait 18 mys or 0.00018s
             lgpio.gpio_write(chip, self.pulse_pin, 0)
-            # Setter pulse to LOW
+            # Setting pulse to LOW
             sleep(self.wait_time) # Wait 18 mys or 0.00018s
             
     def steps_opperate(self, steps, dir: int) -> None:
-        # Setting the direction for the motor to stepin
+        # Setting the direction for the motor to step in
         self.steps_taken = self.steps_taken + steps*((-1)**dir)
         lgpio.gpio_write(chip, self.dir_pin, dir)
-        for _ in range(steps): # To acheive PMW
-            lgpio.gpio_write(chip, self.pulse_pin, 1) # Setter pulse to HIGH 
+        for _ in range(steps):
+            lgpio.gpio_write(chip, self.pulse_pin, 1) # Setting pulse to HIGH 
             sleep(self.wait_time) # Wait 18 mys or 0.00018s
             lgpio.gpio_write(chip, self.pulse_pin, 0)
-            # Setter pulse to LOW
+            # Setting pulse to LOW
             sleep(self.wait_time) # Wait 18 mys or 0.00018s
             
     # def clean_up(self) -> None:
@@ -61,7 +61,7 @@ class Big_Stepper_Motor():
         print(f"Steps taken: {self.steps_taken}")
         # Calculate the number of steps needed to move to the desired angle
         steps = int((angle / 360.0) * self.steps_per_rev)
-        # Keep track of steps taken. Uses (-1)**2 to alternate between adding and subtracting
+        # Keep track of steps taken. Uses (-1)**dir to alternate between adding and subtracting
         self.steps_taken = self.steps_taken + steps*((-1)**dir)
         lgpio.gpio_write(chip, self.dir_pin, dir)
         for _ in range(steps):
@@ -81,7 +81,7 @@ class Small_Stepper_Motor():
         self.pulse_pin = pulse_pin
         self.dir_pin = dir_pin
         self.steps_per_rev = 1600
-        self.wait_time = 0.000010
+        self.wait_time = 0.000018
         self.steps_taken = 0
         
         self.name = name
@@ -95,25 +95,25 @@ class Small_Stepper_Motor():
     # This function takes in the number of revolutions and the direction to turn the motor
     # clockwise is 0, counter clockwise is 1. Could be changed to a boolean.
     def opperate(self, revs: int, dir: int) -> None:
-        # Setting the direction for the motor to stepin
+        # Setting the direction for the motor to step in
         self.steps_taken = self.steps_taken + revs*self.steps_per_rev*((-1)**dir)
         lgpio.gpio_write(chip, self.dir_pin, dir)
-        for _ in range(revs*self.steps_per_rev): # To acheive PMW
-            lgpio.gpio_write(chip, self.pulse_pin, 1) # Setter pulse to HIGH 
-            sleep(self.wait_time) # Wait 18 mys or 
+        for _ in range(revs*self.steps_per_rev):
+            lgpio.gpio_write(chip, self.pulse_pin, 1) # Setting pulse to HIGH 
+            sleep(self.wait_time) # Wait 18 us or 
             lgpio.gpio_write(chip, self.pulse_pin, 0)
-            # Setter pulse to LOW
-            sleep(self.wait_time) # Wait 18 mys or
+            # Setting pulse to LOW
+            sleep(self.wait_time) # Wait 18 us or
             
     def steps_opperate(self, steps, dir: int) -> None:
-        # Setting the direction for the motor to stepin
+        # Setting the direction for the motor to step in
         self.steps_taken = self.steps_taken + steps*((-1)**dir)
         lgpio.gpio_write(chip, self.dir_pin, dir)
-        for _ in range(steps): # To acheive PMW
-            lgpio.gpio_write(chip, self.pulse_pin, 1) # Setter pulse to HIGH 
+        for _ in range(steps):
+            lgpio.gpio_write(chip, self.pulse_pin, 1) # Setting pulse to HIGH 
             sleep(self.wait_time) # Wait 18 mys or 0.00018s
             lgpio.gpio_write(chip, self.pulse_pin, 0)
-            # Setter pulse to LOW
+            # Setting pulse to LOW
             sleep(self.wait_time) # Wait 18 mys or 0.00018s
             
     # def clean_up(self) -> None:
@@ -129,7 +129,7 @@ class Small_Stepper_Motor():
     def move_to_angle(self, angle: float, dir: int) -> None:
         # Calculate the number of steps needed to move to the desired angle
         steps = int((angle / 360.0) * self.steps_per_rev)
-        # Keep track of steps taken. Uses (-1)**2 to alternate between adding and subtracting
+        # Keep track of steps taken. Uses (-1)**dir to alternate between adding and subtracting
         self.steps_taken = self.steps_taken + steps*((-1)**dir)
         lgpio.gpio_write(chip, self.dir_pin, dir)
         for _ in range(steps):

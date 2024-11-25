@@ -1,3 +1,5 @@
+# https://gist.github.com/horstjens/894d94192690c63dc6861d4717c4deb2
+
 # Example file showing a circle moving on screen
 import pygame as pg
 
@@ -36,8 +38,7 @@ while running:
     pg.display.flip()
 
     # limits FPS to 60
-    # dt is delta time in seconds since last frame, used for framerate-
-    # independent physics.
+    # dt is delta time in seconds since last frame, used for framerate-independent physics.
     dt = clock.tick(60) / 1000
 
 pg.quit()

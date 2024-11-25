@@ -1,3 +1,4 @@
+# An array that is limited to a certain size.
 class Moded_Array():
     def __init__(self, max_size: int) -> None:
         self.max_size = max_size

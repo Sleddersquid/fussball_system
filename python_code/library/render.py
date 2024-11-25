@@ -1,3 +1,5 @@
+# Modified version of "simple_moving_ball_ui.py" 
+
 import pygame as pg
 from moded_array import Moded_Array
 from collections import deque
@@ -52,7 +54,6 @@ class Render():
             self.circlepos.x -= 100 * self.dt
              
         # print(self.circlepos)
-
 
 if __name__ == "__main__":
     app = Render(1200, 500)

@@ -1,5 +1,5 @@
 # For imports for classes. So this is a libray file 
-import RPi.GPIO as gpio # Denne virker ikke med Rasspery pi 5
+import RPi.GPIO as gpio # This does not work with the raspberry pi 5, it is for the raspberry pi 4
 from time import sleep
 
 # Setting up the GPIO pins to BCM mode

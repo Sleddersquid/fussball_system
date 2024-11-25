@@ -1,5 +1,3 @@
-# Code imported from https://pyimagesearch.com/2015/09/14/ball-tracking-with-opencv/
-
 # import the necessary packages
 from collections import deque
 from imutils.video import VideoStream
@@ -8,6 +6,7 @@ import cv2
 import imutils
 import time
 
+# Code imported from https://pyimagesearch.com/2015/09/14/ball-tracking-with-opencv/
 
 # construct the argument parse and parse the arguments
 

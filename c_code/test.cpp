@@ -2,7 +2,7 @@
 #include <chrono>
 #include <gpiod.hpp>
 
-#include "include_cpp_file/motors.cpp"
+#include "library/motors.cpp"
 
 gpiod::chip chip("gpiochip0");
 

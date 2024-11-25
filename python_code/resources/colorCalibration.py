@@ -6,7 +6,6 @@ from imutils.video import VideoStream
 from imutils import resize
 import time
 
-
 # vs = VideoStream(src=1).start()
 
 cv.namedWindow("Trackbar Window", cv.WINDOW_AUTOSIZE)
@@ -18,7 +17,6 @@ cv.createTrackbar("Lower V", "Trackbar Window", 0, 255, lambda a: ())
 cv.createTrackbar("Upper H", "Trackbar Window", 179, 179, lambda a: ())
 cv.createTrackbar("Upper S", "Trackbar Window", 255, 255, lambda a: ())
 cv.createTrackbar("Upper V", "Trackbar Window", 255, 255, lambda a: ())
-
 
 # Takes long time to start the camera. IDK why
 try:
@@ -41,7 +39,6 @@ while True:
     u_v = cv.getTrackbarPos("Upper V", "Trackbar Window")
     lower_blue = (l_h, l_s, l_v)
     upper_blue = (u_h, u_s, u_v)
-    
     
     mask = cv.inRange(hsv, lower_blue, upper_blue)
     result = cv.bitwise_and(frame, frame, mask=mask)    

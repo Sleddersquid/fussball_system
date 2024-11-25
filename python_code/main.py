@@ -10,15 +10,15 @@ import numpy as np
 # import imutils
 import time
 
-# Vekk fra bordet
+# Away from the table
 def forwards(motor, steps):
     motor.steps_opperate(steps, 0) # clockwise
     
-# Nærmere mot bordet, alså innover i mot bordet
+# Inwards into the table
 def backwards(motor, steps):
     motor.steps_opperate(steps, 1) # counter clockwise
 
-# Gjør en bevegelse fram og tilbake, n ganger, 1000 steps om gangen
+# Repeats forwards and backwards movement of motor n times
 def back_and_forth(motor, n):
     for i in range(0, n):
         motor.steps_opperate(1000, 1+(-1)**i)
@@ -28,7 +28,7 @@ def main():
     liten_motor = pi5modules.Small_Stepper_Motor(23, 24, "Motor2", 0) # 20, 21
 
 
-    # DET ER IKKE SATT EN MAKS GRENSE FOR STEG PÅ MOTORNE
+    # THERE IS NO LIMIT TO HOW MANY STEPS THE MOTOR CAN TAKE
     # back_and_forth(stor_motor, 10)
     # back_and_forth(liten_motor, 10)
     

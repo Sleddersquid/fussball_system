@@ -1,0 +1,3 @@
+/home/sleddersquid/fussball_system/test_cmake_cpp/CMakeFiles/main.dir
+/home/sleddersquid/fussball_system/test_cmake_cpp/CMakeFiles/edit_cache.dir
+/home/sleddersquid/fussball_system/test_cmake_cpp/CMakeFiles/rebuild_cache.dir
