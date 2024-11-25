@@ -15,7 +15,7 @@
 #include <lccv.hpp>
 
 // For the motors and the threadsafe deque
-#include "library/motors.cpp" // What even is this? Why. I'll figure it out later.
+#include "library/motors.cpp" // It is not supposed to be like this? Why. I'll figure it out later.
 // #include "library/motors.hpp"
 #include "library/threadsafe_containers/queue-threadsafe.hpp"
 

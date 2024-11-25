@@ -6,6 +6,8 @@
 
 #include <gpiod.hpp>
 
+#include "motors.cpp"
+
 // These classes are used for custom errors
 class MAX_LIMIT_FOR_STEPS_REACHED {};
 
@@ -91,7 +93,6 @@ public:
      */
     void reset();
 };
-
 
 
 /**

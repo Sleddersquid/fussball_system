@@ -1,3 +1,5 @@
+// From https://github.com/kbarni/LCCV/tree/main/example
+
 #include <lccv.hpp>
 #include <opencv2/opencv.hpp>
 

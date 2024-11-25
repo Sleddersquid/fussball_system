@@ -27,8 +27,8 @@ Big_Stepper_motor::Big_Stepper_motor(int pulse_pin, int dir_pin, gpiod::chip chi
     this->m_last_coord = this->m_start_coord;
 
     // This the string needed to request the line?
-    dir_line.request({"example", gpiod::line_request::DIRECTION_OUTPUT, 0});
-    pulse_line.request({"example", gpiod::line_request::DIRECTION_OUTPUT, 0});
+    dir_line.request({"How to be human", gpiod::line_request::DIRECTION_OUTPUT, 0});
+    pulse_line.request({"How to be human", gpiod::line_request::DIRECTION_OUTPUT, 0});
 };
 
 Big_Stepper_motor::~Big_Stepper_motor() {
@@ -40,8 +40,6 @@ Big_Stepper_motor::~Big_Stepper_motor() {
 float Big_Stepper_motor::smoothnging(int new_min, int new_max, int old_min, int old_max, int x) {
     return new_min + ((x - old_min) / (old_max - old_min)) * (new_max - new_min);
 };
-
-
 
 void Big_Stepper_motor::opperate(int revs, bool dir) {
     // Check if it will go over under the limit. If it does, throw an exception
@@ -173,7 +171,6 @@ void Big_Stepper_motor::reset() {
 };
 
 
-
 // The small motor has no limit of how many steps it can take
 // ------------------------------ SMALL MOTOR ------------------------------ //
 Small_Stepper_motor::Small_Stepper_motor(int pulse_pin, int dir_pin, gpiod::chip chip) 
@@ -184,8 +181,8 @@ Small_Stepper_motor::Small_Stepper_motor(int pulse_pin, int dir_pin, gpiod::chip
     this->dir_line = chip.get_line(dir_pin);
 
     // This the string needed to request the line?
-    dir_line.request({"example", gpiod::line_request::DIRECTION_OUTPUT, 0});
-    pulse_line.request({"example", gpiod::line_request::DIRECTION_OUTPUT, 0});
+    dir_line.request({"How to be human", gpiod::line_request::DIRECTION_OUTPUT, 0});
+    pulse_line.request({"How to be human", gpiod::line_request::DIRECTION_OUTPUT, 0});
 };
 
 Small_Stepper_motor::~Small_Stepper_motor() {
