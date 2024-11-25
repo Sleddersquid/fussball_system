@@ -2,6 +2,7 @@
 #include <string>
 #include <unistd.h>
 #include <math.h>
+#include <thread>
 
 #include <gpiod.hpp>
 
@@ -17,7 +18,7 @@
  * @param dir_pin - The pin that the direction signal is connected to
  * @param chip - The GPIO chip for opening the lines 
  */
-Big_Stepper_motor::Big_Stepper_motor(int pulse_pin, int dir_pin, gpiod::chip chip, double acceleration)
+Big_Stepper_motor::Big_Stepper_motor(int pulse_pin, int dir_pin, gpiod::chip chip)
     : m_pulse_pin(pulse_pin), m_dir_pin(dir_pin) {
 
     // Retrieve the line handles
@@ -25,8 +26,6 @@ Big_Stepper_motor::Big_Stepper_motor(int pulse_pin, int dir_pin, gpiod::chip chi
     this->dir_line = chip.get_line(dir_pin);
 
     this->m_last_coord = this->m_start_coord;
-
-    this->a = acceleration;
 
     // This the string needed to request the line?
     dir_line.request({"How to be human", gpiod::line_request::DIRECTION_OUTPUT, 0});
@@ -37,10 +36,6 @@ Big_Stepper_motor::~Big_Stepper_motor() {
         // std::cout << this->m_last_coord << std::endl;
         pulse_line.release();
         dir_line.release();
-};
-
-float Big_Stepper_motor::smoothnging(int new_min, int new_max, int old_min, int old_max, int x) {
-    return new_min + ((x - old_min) / (old_max - old_min)) * (new_max - new_min);
 };
 
 void Big_Stepper_motor::opperate(int revs, bool dir) {
@@ -171,68 +166,6 @@ void Big_Stepper_motor::reset() {
     this->dir_line.set_value(0);
     this->steps_taken = 0;
 };
-
-
-void Big_Stepper_motor::move_to_pos(int cood) {
-    int S_current = 0;
-    double v_current = this->v_start;
-    double T_step = this->T_start;
-
-    if(new_coord > m_end_coord) {
-        new_coord = this->m_end_coord;
-    }
-    if (new_coord < m_start_coord) {
-        new_coord = this->m_start_coord;
-    }
-
-    int coord = new_coord - this->m_last_coord;
-    // float smoothing = (this->m_last_coord - this->m_start_coord)/coord;
-
-    // If coord positive, dir = 1
-    int dir = 1;
-    if (coord > 0) {
-        dir = 0;
-    }
-
-    int S_total = abs(coord) * steps_per_coord * 2; // TAKING TWO STEPS IN THE FOR LOOP TF
-
-    this->dir_line.set_value(dir);
-
-    if (2 * this->S_accel > S_total) {
-        this->v_max = sqrt(pow(this->v_start, 2) + this->a * S_total);
-        this->S_accel = ((pow(this->v_max, 2) - pow(this->v_start, 2)) / (2 * a));
-    }
-
-    double S_constant = S_total - 2 * this->S_accel;
-
-    while (S_current < S_total) {
-        if (S_current < S_accel) {
-            v_current = std::min(v_current + this->a*T_step, this->v_max);
-        } else if(S_current < S_accel + S_constant) {
-            v_current = v_max;
-        } else {
-            v_current = std::max(v_current - this->a*T_step, this->v_start);
-        }
-
-        T_step = std::max(1 / v_current, T_min);
-
-        std::cout << "Steps: " << S_current << ", Speed: " << v_current << "steps/s, Interval: " << T_step << "µs, pulse_line" << S_current%2 << std::endl;
-        // this->pulse_line.set_value(S_current%2);
-
-        usleep(T_step);
-        // std::this_thread::sleep_for(std::chrono::microseconds(int(T_step)));
-
-        ++S_current;
-    }
-    
-    this->steps_taken = this->steps_taken + S_total * (dir ? -1 : 1);
-    this->m_last_coord = new_coord;
-    this->dir_line.set_value(0);
-
-}
-
-
-
 
 // The small motor has no limit of how many steps it can take
 // ------------------------------ SMALL MOTOR ------------------------------ //

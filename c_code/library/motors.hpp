@@ -6,7 +6,7 @@
 
 #include <gpiod.hpp>
 
-#include "motors.cpp"
+// #include "motors.cpp"
 
 // These classes are used for custom errors
 class MAX_LIMIT_FOR_STEPS_REACHED {};
@@ -48,19 +48,8 @@ private:
     int m_start_coord = 455; // 161, 440, Works with 424
     int m_end_coord = 813; // 1217, 800, Works with 777
 
-    double a;
-
-    double T_start = 75e-6;  // Initial step interval in seconds(75 µs)
-    double T_min = 30e-6;  //Minimum step interval in seconds(30 µs)
-
-    double v_start = 1 / T_start; // Starting speed in steps/s
-    double v_max = 1 / T_min; // Max speed in steps/s
-    double S_accel = (pow(v_max, 2) - pow(v_start,2)) / (2 * a); // Steps during acceleration
-
-    float smoothnging(int new_min, int new_max, int old_min, int old_max, int x);
-
 public:
-    Big_Stepper_motor(int pulse_pin, int dir_pin, gpiod::chip chip, double acceleration);
+    Big_Stepper_motor(int pulse_pin, int dir_pin, gpiod::chip chip);
 
     /**
      * @brief Releases the pulse and the dir line when destroyed
@@ -102,7 +91,7 @@ public:
      */
     void reset();
 
-    void move_to_pos(int new_pos);
+    void move_to_pos(double new_coord);
 };
 
 
