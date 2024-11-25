@@ -1,0 +1,227 @@
+#include <Wire.h>
+#include <LiquidCrystal_I2C.h>
+
+LiquidCrystal_I2C lcd(0x27, 16, 2); // Address, columns, rows
+
+const int PLAYER_PIN = 37;
+const int BOT_PIN = 31;
+const int PAUSE_PIN = 35;
+const int MINUS_PLAYER_PIN = 39;
+const int MINUS_BOT_PIN = 33;
+const int IR_PLAYER_PIN = 9;
+const int IR_BOT_PIN = 8;
+
+const int RED_LED_PIN = 10;
+const int GREEN_LED_PIN = 11;
+const int BLUE_LED_PIN = 13;
+const int BUZZER_PIN = 12; // Buzzer pin
+
+int playerGoals = 0;
+int botGoals = 0;
+bool paused = false;
+
+unsigned long lastDebounceTimePlayer = 0;
+unsigned long lastDebounceTimeBot = 0;
+unsigned long lastDebounceTimePause = 0;
+unsigned long lastDebounceTimeMinusPlayer = 0;
+unsigned long lastDebounceTimeMinusBot = 0;
+unsigned long lastDebounceTimeIRPlayer = 0;
+unsigned long lastDebounceTimeIRBot = 0;
+const unsigned long debounceDelay = 500;
+
+unsigned long startTime;
+unsigned long elapsedTime = 0;
+int displayMinute = 0;
+int displaySecond = 0;
+unsigned long pausedTime = 0;
+bool resetHold = false;
+
+unsigned long lastGoalTimePlayer = 0;
+unsigned long lastGoalTimeBot = 0;
+bool beamBrokenPlayer = false;
+bool beamBrokenBot = false;
+
+bool ledBlinking = false;
+unsigned long blinkStartTime = 0;
+const unsigned long blinkDuration = 2000; // 2 seconds
+const unsigned long irDebounceDelay = 2000; // 200 milliseconds
+
+void updateScreen() {
+  lcd.clear();
+  lcd.setCursor(0, 0);
+  lcd.print("PLAYER TIME BOT");
+
+  char timeBuffer[6];
+  sprintf(timeBuffer, "%02d:%02d", displayMinute, displaySecond);
+
+  lcd.setCursor(0, 1);
+  lcd.print("   ");
+  lcd.print(playerGoals);
+  lcd.print("   ");
+  lcd.print(timeBuffer);
+  lcd.print(" ");
+  lcd.print(botGoals);
+  lcd.print(" ");
+}
+
+void setup() {
+  lcd.init();
+  lcd.backlight();
+
+  pinMode(PLAYER_PIN, INPUT_PULLUP);
+  pinMode(BOT_PIN, INPUT_PULLUP);
+  pinMode(PAUSE_PIN, INPUT_PULLUP);
+  pinMode(MINUS_PLAYER_PIN, INPUT_PULLUP);
+  pinMode(MINUS_BOT_PIN, INPUT_PULLUP);
+  pinMode(IR_PLAYER_PIN, INPUT_PULLUP);
+  pinMode(IR_BOT_PIN, INPUT_PULLUP);
+
+  pinMode(RED_LED_PIN, OUTPUT);
+  pinMode(GREEN_LED_PIN, OUTPUT);
+  pinMode(BLUE_LED_PIN, OUTPUT);
+  pinMode(BUZZER_PIN, OUTPUT); // Set buzzer as output
+
+  digitalWrite(BUZZER_PIN, LOW); // Ensure buzzer is off initially
+  startTime = millis();
+  updateScreen();
+}
+
+void playArcadeSound() {
+  for (int freq = 20; freq <= 1500; freq += 250) {
+    tone(BUZZER_PIN, freq); // Start at 200 Hz, go up to 1 kHz
+    delay(20);              // Quickly sweep the frequency
+  }
+  noTone(BUZZER_PIN); // Turn off the buzzer
+}
+
+void loop() {
+  int playerState = digitalRead(PLAYER_PIN);
+  int botState = digitalRead(BOT_PIN);
+  int irPlayerState = digitalRead(IR_PLAYER_PIN);
+  int irBotState = digitalRead(IR_BOT_PIN);
+  int pauseState = digitalRead(PAUSE_PIN);
+  int minusPlayerState = digitalRead(MINUS_PLAYER_PIN);
+  int minusBotState = digitalRead(MINUS_BOT_PIN);
+
+  unsigned long currentMillis = millis();
+
+  // Default state: glow green
+  if (!ledBlinking) {
+    digitalWrite(RED_LED_PIN, LOW);
+    digitalWrite(GREEN_LED_PIN, HIGH); // Glow green
+    digitalWrite(BLUE_LED_PIN, LOW);
+  }
+
+  // Player goal logic
+  if ((playerState == HIGH || (irPlayerState == LOW && !beamBrokenPlayer && (currentMillis - lastGoalTimePlayer) > 2000))) {
+    if (irPlayerState == LOW && (currentMillis - lastDebounceTimeIRPlayer) > irDebounceDelay) {
+      playerGoals++;
+      updateScreen();
+      lastGoalTimePlayer = currentMillis;
+      beamBrokenPlayer = true;
+
+      ledBlinking = true;
+      blinkStartTime = currentMillis;
+      lastDebounceTimeIRPlayer = currentMillis;
+    }
+  } else if (irPlayerState == HIGH) {
+    beamBrokenPlayer = false;
+  }
+
+  // Bot goal logic
+  if ((botState == HIGH || (irBotState == LOW && !beamBrokenBot && (currentMillis - lastGoalTimeBot) > 2000))) {
+    if (irBotState == LOW && (currentMillis - lastDebounceTimeIRBot) > irDebounceDelay) {
+      botGoals++;
+      updateScreen();
+      lastGoalTimeBot = currentMillis;
+      beamBrokenBot = true;
+
+      ledBlinking = true;
+      blinkStartTime = currentMillis;
+      lastDebounceTimeIRBot = currentMillis;
+    }
+  } else if (irBotState == HIGH) {
+    beamBrokenBot = false;
+  }
+
+  // LED blinking and arcade sound logic
+  if (ledBlinking) {
+    unsigned long currentTime = millis();
+    if ((currentTime - blinkStartTime) < blinkDuration) {
+      digitalWrite(RED_LED_PIN, HIGH);
+      digitalWrite(GREEN_LED_PIN, LOW);
+      digitalWrite(BLUE_LED_PIN, HIGH);
+      playArcadeSound(); // Play arcade sound during blinking
+      delay(20);
+
+      digitalWrite(RED_LED_PIN, LOW);
+      digitalWrite(GREEN_LED_PIN, HIGH);
+      digitalWrite(BLUE_LED_PIN, LOW);
+      delay(20);
+    } else {
+      ledBlinking = false;
+      digitalWrite(RED_LED_PIN, LOW);
+      digitalWrite(GREEN_LED_PIN, HIGH); // Back to default green
+      digitalWrite(BLUE_LED_PIN, LOW);
+      noTone(BUZZER_PIN); // Ensure buzzer is off
+    }
+  }
+
+  // Other logic (start/stop, reset, goal decrement, etc.) remains unchanged
+
+  // Game reset
+  if (pauseState == LOW && !resetHold) {
+    if ((millis() - lastDebounceTimePause) > 3000) {
+      resetHold = true;
+      resetGame();
+    }
+  } else if (pauseState == HIGH && !resetHold && (millis() - lastDebounceTimePause) > debounceDelay) {
+    paused = !paused;
+    if (paused) {
+      pausedTime = millis();
+    } else {
+      startTime += (millis() - pausedTime);
+    }
+    lastDebounceTimePause = millis();
+  }
+
+  if (pauseState == HIGH && resetHold) {
+    resetHold = false;
+    lastDebounceTimePause = millis();
+  }
+
+  // Update screen
+  if (!paused) {
+    elapsedTime = millis() - startTime;
+    displayMinute = (elapsedTime / 60000) % 60;
+    displaySecond = (elapsedTime / 1000) % 60;
+
+    static unsigned long lastUpdate = 0;
+    if (millis() - lastUpdate >= 1000) {
+      lastUpdate = millis();
+      updateScreen();
+    }
+  }
+
+  // Stop game after 45 minutes
+  if (displayMinute >= 45 && !paused) {
+    lcd.clear();
+    lcd.setCursor(0, 0);
+    lcd.print("Game Over");
+    lcd.setCursor(0, 1);
+    lcd.print("P:" + String(playerGoals) + "  B:" + String(botGoals));
+    while (true);
+  }
+}
+
+void resetGame() {
+  lcd.clear();
+  lcd.setCursor(0, 0);
+  lcd.print("GAME RESET");
+  delay(3000);
+  playerGoals = 0;
+  botGoals = 0;
+  startTime = millis();
+  paused = false;
+  updateScreen();
+}

@@ -1,0 +1,195 @@
+#include <Wire.h>
+#include <LiquidCrystal_I2C.h>
+
+// Update the I2C address (e.g. 0x27)
+LiquidCrystal_I2C lcd(0x27, 16, 2);  // Address, columns, rows
+
+// Define pins for player, bot, pause, minus goals, and IR sensors
+const int PLAYER_PIN = 7;  // Player button
+const int BOT_PIN = 3;     // Bot button
+const int PAUSE_PIN = 5;   // Pause time
+const int MINUS_PLAYER_PIN = 8;  // Minus goal for player
+const int MINUS_BOT_PIN = 4;     // Minus goal for bot
+const int IR_PLAYER_PIN = 6;     // IR sensor for player
+const int IR_BOT_PIN = 8;        // IR sensor for bot
+
+// Variables to store the number of goals
+int playerGoals = 0;
+int botGoals = 0;
+bool paused = false;  // Variable indicating if the timer is paused
+
+// Debounce-related variables
+unsigned long lastDebounceTimePlayer = 0;     // Time for last change on PLAYER_PIN
+unsigned long lastDebounceTimeBot = 0;        // Time for last change on BOT_PIN
+unsigned long lastDebounceTimePause = 0;      // Debounce for pause
+unsigned long lastDebounceTimeMinusPlayer = 0;  // Debounce for minus goal for player
+unsigned long lastDebounceTimeMinusBot = 0;     // Debounce for minus goal for bot
+unsigned long lastDebounceTimeIRPlayer = 0;     // Debounce for IR player
+unsigned long lastDebounceTimeIRBot = 0;        // Debounce for IR bot
+const unsigned long debounceDelay = 500;        // 500ms debounce delay
+
+// Time-related variables
+unsigned long startTime;
+unsigned long elapsedTime = 0;  // Time stored when the game is paused
+int displayMinute = 0;
+int displaySecond = 0;
+unsigned long pausedTime = 0;   // Time stored when the game was paused
+bool resetHold = false;         // Variable to check if reset button is held
+
+// Variables for IR sensor handling
+unsigned long lastGoalTimePlayer = 0;  // Last time a goal was registered for player
+unsigned long lastGoalTimeBot = 0;     // Last time a goal was registered for bot
+bool beamBrokenPlayer = false;         // Whether the player's beam is currently broken
+bool beamBrokenBot = false;            // Whether the bot's beam is currently broken
+
+void setup() {
+  // Initialize the LCD screen
+  lcd.init();
+  lcd.backlight();
+
+  // Set pin mode for buttons and IR sensors
+  pinMode(PLAYER_PIN, INPUT_PULLUP);    // Player button
+  pinMode(BOT_PIN, INPUT_PULLUP);       // Bot button
+  pinMode(PAUSE_PIN, INPUT_PULLUP);     // Pause button
+  pinMode(MINUS_PLAYER_PIN, INPUT_PULLUP);  // Minus player goals button
+  pinMode(MINUS_BOT_PIN, INPUT_PULLUP);     // Minus bot goals button
+  pinMode(IR_PLAYER_PIN, INPUT);  // IR sensor for player
+  pinMode(IR_BOT_PIN, INPUT);     // IR sensor for bot
+
+  // Start the timer
+  startTime = millis();
+
+  // Display initial information on the LCD screen
+  updateScreen();
+}
+
+void loop() {
+  // Read the status of the buttons and IR sensors
+  int playerState = digitalRead(PLAYER_PIN);
+  int botState = digitalRead(BOT_PIN);
+  int irPlayerState = digitalRead(IR_PLAYER_PIN);
+  int irBotState = digitalRead(IR_BOT_PIN);
+  int pauseState = digitalRead(PAUSE_PIN);
+  int minusPlayerState = digitalRead(MINUS_PLAYER_PIN);
+  int minusBotState = digitalRead(MINUS_BOT_PIN);
+
+  // Handle goals for the player (button and IR sensor)
+  if ((playerState == HIGH || (irPlayerState == LOW && !beamBrokenPlayer && (millis() - lastGoalTimePlayer) > 2000))) {
+    playerGoals++;  // Increase player goals
+    updateScreen();  // Update the screen to show the new score
+    lastGoalTimePlayer = millis();  // Update the last goal time
+    beamBrokenPlayer = true;  // Mark the beam as broken
+  } else if (irPlayerState == HIGH) {
+    beamBrokenPlayer = false;  // Beam is no longer broken
+  }
+
+  // Handle goals for the bot (button and IR sensor)
+  if ((botState == HIGH || (irBotState == LOW && !beamBrokenBot && (millis() - lastGoalTimeBot) > 2000))) {
+    botGoals++;  // Increase bot goals
+    updateScreen();  // Update the screen to show the new score
+    lastGoalTimeBot = millis();  // Update the last goal time
+    beamBrokenBot = true;  // Mark the beam as broken
+  } else if (irBotState == HIGH) {
+    beamBrokenBot = false;  // Beam is no longer broken
+  }
+
+  // Pause or start the game
+  if (pauseState == LOW && !resetHold) {  // Check if the pause button is held down
+    if ((millis() - lastDebounceTimePause) > 3000) {  // If the button is held down for 3 seconds
+      resetHold = true;
+      resetGame();  // Reset the game
+    }
+  } else if (pauseState == HIGH && !resetHold && (millis() - lastDebounceTimePause) > debounceDelay) {  // Short press
+    paused = !paused;  // Toggle between pause and start
+    if (paused) {
+      pausedTime = millis();
+    } else {
+      startTime += (millis() - pausedTime);
+    }
+    lastDebounceTimePause = millis();
+  }
+
+  // Reset the hold variable when the button is released
+  if (pauseState == HIGH && resetHold) {
+    resetHold = false;
+    lastDebounceTimePause = millis();  // Avoid immediate pause
+  }
+
+  // Minus goals for player
+  if (minusPlayerState == HIGH && (millis() - lastDebounceTimeMinusPlayer) > debounceDelay) {
+    if (playerGoals > 0) playerGoals--;  // Decrease goals for the player
+    updateScreen();
+    lastDebounceTimeMinusPlayer = millis();
+  }
+
+  // Minus goals for bot
+  if (minusBotState == HIGH && (millis() - lastDebounceTimeMinusBot) > debounceDelay) {
+    if (botGoals > 0) botGoals--;  // Decrease goals for the bot
+    updateScreen();
+    lastDebounceTimeMinusBot = millis();
+  }
+
+  // Update screen and time if the game is not paused
+  if (!paused) {
+    // Calculate elapsed time normally (1 second = 1 second)
+    elapsedTime = millis() - startTime;
+
+    // Convert to minutes and seconds
+    displayMinute = (elapsedTime / 60000) % 60;
+    displaySecond = (elapsedTime / 1000) % 60;
+
+    // Update the screen every second
+    static unsigned long lastUpdate = 0;
+    if (millis() - lastUpdate >= 1000) {
+      lastUpdate = millis();
+      updateScreen();
+    }
+  }
+
+  // Stop when the time reaches 45:00
+  if (displayMinute >= 45 && !paused) {
+    lcd.clear();
+    lcd.setCursor(0, 0);
+    lcd.print("Game Over");
+    lcd.setCursor(0, 1);
+    lcd.print("P:" + String(playerGoals) + "  B:" + String(botGoals));
+    while (true)
+      ;
+  }
+}
+
+// Function to reset the game
+void resetGame() {
+  lcd.clear();
+  lcd.setCursor(0, 0);
+  lcd.print("GAME RESET");
+  delay(3000);  // Show "GAME RESET" for 2 seconds
+  playerGoals = 0;
+  botGoals = 0;
+  startTime = millis();  // Reset time
+  paused = false;
+  updateScreen();  // Update the screen with reset values
+}
+
+// Function to update the LCD screen
+void updateScreen() {
+  lcd.clear();
+
+  // First row: --PLAYER--TIME--BOT--
+  lcd.setCursor(0, 0);
+  lcd.print("PLAYER TIME BOT");
+
+  // Format minutes and seconds to MM:SS
+  char timeBuffer[6];
+  sprintf(timeBuffer, "%02d:%02d", displayMinute, displaySecond);
+
+  // Second row: ---XX---MM:SS--XX--
+  lcd.setCursor(0, 1);
+  lcd.print("   ");
+  lcd.print(playerGoals);  // Player's goals
+  lcd.print("   ");
+  lcd.print(timeBuffer);   // Time in MM:SS format
+  lcd.print(" ");
+  lcd.print(botGoals);     // Bot's goals
+  lcd.print(" ");
+}
