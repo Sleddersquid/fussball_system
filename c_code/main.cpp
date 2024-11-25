@@ -131,7 +131,7 @@ void opencv(std::threadsafe::queue<cv::Point> &deque_ball_pos) {
 
             predictball_pos = simplePredict(old_center, new_center);
 
-            if (old_center.y - new_center.y < 2) { // If the ball is moving towards the goal
+            if (old_center.y - new_center.y < 1) { // If the ball is moving towards the goal
                 ball_intersect = intersect_determinant(cv::Point(85, 760), cv::Point(1167, 709), old_center, predictball_pos);
             } else {
                 ball_intersect = cv::Point(643, 734); // Reset?
