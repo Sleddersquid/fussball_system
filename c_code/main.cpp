@@ -60,6 +60,7 @@ cv::Point intersect_determinant(cv::Point p1, cv::Point p2, cv::Point p3, cv::Po
         return cv::Point(0, 0);
     }
     // See https://en.wikipedia.org/wiki/Line–line_intersection for formula
+    // https://www.desmos.com/calculator/hcq4p7qogq
     // Will prob drop the px, just needed for visualisation
     float px = ((p1.x*p2.y - p1.y*p2.x)*(p3.x - p4.x) - (p1.x - p2.x)*(p3.x*p4.y - p3.y*p4.x))/det;
     float py = ((p1.x*p2.y - p1.y*p2.x)*(p3.y - p4.y) - (p1.y - p2.y)*(p3.x*p4.y - p3.y*p4.x))/det;
