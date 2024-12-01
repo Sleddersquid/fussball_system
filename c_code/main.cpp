@@ -103,6 +103,8 @@ void opencv(std::threadsafe::queue<cv::Point> &deque_ball_pos) {
         if (!cam.getVideoFrame(image, 1000)) {
             std::cerr << "Timeout error" << std::endl;
         } else {
+
+            // This is from the python file "test_opencv.py" and https://github.com/hcglhcgl/BallDetection/blob/master/balls.cpp
             cv::cvtColor(image, HSV, cv::COLOR_BGR2HSV);
 
             cv::inRange(HSV, hsv_lower, hsv_upper, mask);

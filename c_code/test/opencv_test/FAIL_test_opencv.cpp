@@ -2,6 +2,9 @@
 #include <iostream>
 #include <chrono>
 
+// CHATGPT
+// Tried to open the camera, but failed.
+
 int main() {
     // Open the default camera (0)
     cv::VideoCapture cap(0);
