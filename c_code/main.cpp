@@ -212,7 +212,7 @@ gpiod::chip chip("gpiochip0");
 
 // Created in this scope so that it is possible to reset the motors.
 // The problem is the deque waiting.  
-Big_Stepper_motor big_motor_1(23, 24, chip);
+Big_Stepper_motor big_motor_1(23, 24, chip, 2000000);
 Small_Stepper_motor small_motor_1(20, 21, chip);
 
 // The mutex is in the threadsafe queue
